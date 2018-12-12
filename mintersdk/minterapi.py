@@ -39,19 +39,21 @@ class MinterAPI(object):
         
         return super.__setattr__(self, name, value)
     
-    def get_balance(self, address):
+    def get_balance(self, address, height=None):
         """
         Get balance by address
             @param address|string: wallet address
+            @param height|int: block height
         """
-        return self._request('balance/{}'.format(address))
+        return self._request('address', params={'address': address, 'height': height})
     
     def get_nonce(self, address):
         """
         Nonce - int, used for prevent transaction reply
             @param address|string: wallet address
         """
-        return self._request('transactionCount/{}'.format(address))
+        
+        return int(self.get_balance(address)['result']['transaction_count']) + 1
     
     def get_status(self):
         """
@@ -59,92 +61,86 @@ class MinterAPI(object):
         """
         return self._request('status')
         
-    def get_candidate(self, public_key):
+    def get_candidate(self, public_key, height=None):
         """
         Get canditate
-            @param public_key|string: candidate public key 
+            @param public_key|string: candidate public key
+            @param height|int: block height
         """
-        return self._request('candidate/{}'.format(public_key))
+        return self._request('candidate', params={'pubkey': public_key, 'height': height})
             
-    def get_candidates(self):
+    def get_candidates(self, height=None):
         """
         Get candidates
+            @param height|int: block height
         """
-        return self._request('candidates')
+        return self._request('candidates', params={'height': height})
       
     def get_validators(self, height=None):
         """
         Get validators list
-            @param height|int: get validators on specified block height  
+            @param height|int: get validators on specified block height 
         """
-        command = 'validators'
-        params = None
-        
-        if height:
-            params = {'height': height}
             
-        return self._request(command, params=params)
+        return self._request('validators', params={'height': height})
     
-    def estimate_coin_buy(self, coin_to_sell, value_to_buy, coin_to_buy):
+    def estimate_coin_buy(self, coin_to_sell, value_to_buy, coin_to_buy, height=None):
         """
         Return estimate of buy coin transaction
             @param coin_to_sell|string: coin name to sell
             @param value_to_buy|string: amount of coins to buy
-            @param coin_to_buy|string: coin name to buy  
+            @param coin_to_buy|string: coin name to buy
+            @param height|int: block height
         """
         return self._request(
-                        'estimateCoinBuy', 
+                        'estimate_coin_buy', 
                         params={
                             'coin_to_sell': coin_to_sell,
                             'value_to_buy': value_to_buy,
-                            'coin_to_buy': coin_to_buy
+                            'coin_to_buy': coin_to_buy,
+                            'height': height
                         }
                     )
         
-    def estimate_coin_sell(self, coin_to_sell, value_to_sell, coin_to_buy):
+    def estimate_coin_sell(self, coin_to_sell, value_to_sell, coin_to_buy, height=None):
         """
         Return estimate of sell coin transaction
             @param coin_to_sell|string: coin name to sell
             @param value_to_sell|string: amount of coins to sell
-            @param coin_to_buy|string: coin name to buy  
+            @param coin_to_buy|string: coin name to buy
+            @param height|int: block height
         """
         return self._request(
-                        'estimateCoinSell', 
+                        'estimate_coin_sell', 
                         params={
                             'coin_to_sell': coin_to_sell,
                             'value_to_sell': value_to_sell,
-                            'coin_to_buy': coin_to_buy
+                            'coin_to_buy': coin_to_buy,
+                            'height': height
                         }
                     )
         
-    def get_coin_info(self, name):
+    def get_coin_info(self, symbol, height=None):
         """
         Get information about coin
-            @param name|string: coin name 
-        """
-        return self._request('coinInfo/{}'.format(name))
-    
-    def get_base_coin_volume(self, height):
-        """
-        Get amount of base coin (BIP or MNT) existing in the network. It counts block rewards, 
-        premine and relayed rewards.
+            @param symbol|string: coin name
             @param height|int: block height
         """
-        return self._request('bipVolume', params={'height': height})
+        return self._request('coin_info', params={'symbol': symbol, 'height': height})
     
     def get_block(self, height):
         """
         Get block data at given height
             @param height|int: block height 
         """
-        return self._request('block/{}'.format(height))
+        return self._request('block', params={'height': height})
     
     def get_transaction(self, tx_hash):
         """
         Get transaction info
             @param hash|string: transaction hash 
         """
-        return self._request('transaction/{}'.format(tx_hash))
+        return self._request('transaction', params={'hash': tx_hash})
     
     def send_transaction(self, tx):
         """
@@ -152,23 +148,7 @@ class MinterAPI(object):
             @param tx|string: signed transaction to send 
         """
 
-        return self._request('sendTransaction', 
-                             request_type='post', 
-                             data=json.dumps({'transaction': tx}))
-    
-    def get_transactions_from(self, address):
-        """
-        Get outcoming transactions by address
-            @param address|string: wallet address without prefix 
-        """
-        raise NotImplementedError('Method is not implemented yet')
-    
-    def get_transactions_to(self, address):
-        """
-        Get incoming transactions by address
-            @param address|string: wallet address without prefix 
-        """
-        raise NotImplementedError('Method is not implemented yet')
+        return self._request('send_transaction', params={'tx': tx})
     
     def _request(self, command, request_type='get', **kwargs):
         """
@@ -187,13 +167,12 @@ class MinterAPI(object):
             elif request_type == 'post':
                 response = requests.post(url, **kwargs)
             
-            # If request data contains errors, API return 500 status code with error data in json.
             # If everything is ok, API return 200 with response data in json
-            if response.status_code in [200, 500]:
+            if response.ok:
                 return response.json() 
-            # In all other response not ok cases raise error
-            elif not response.ok:
-                raise HTTPException('HTTP error (code: {})'.format(response.status_code))
+            
+            # It response is not ok
+            raise HTTPException('HTTP error (code: {})'.format(response.status_code))
         except requests.exceptions.ReadTimeout:
             raise
         except requests.exceptions.ConnectTimeout:
