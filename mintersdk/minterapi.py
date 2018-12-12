@@ -148,7 +148,7 @@ class MinterAPI(object):
             @param tx|string: signed transaction to send 
         """
 
-        return self._request('send_transaction', params={'tx': tx})
+        return self._request('send_transaction', params={'tx': '0x' + tx})
     
     def _request(self, command, request_type='get', **kwargs):
         """
