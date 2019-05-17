@@ -2,3 +2,4 @@
 /.project
 /appenv/
 __pycache__
+*.sublime*
