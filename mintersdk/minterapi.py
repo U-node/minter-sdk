@@ -176,6 +176,44 @@ class MinterAPI(object):
             }
         )
 
+    def estimate_tx_comission(self, tx):
+        """
+        Estimate current tx gas.
+        Args:
+            tx (string): signed transaction
+        """
+        return self._request('estimate_tx_commission', params={'tx': tx})
+
+    def get_transactions(self, query):
+        """
+        Get transactions by query.
+        Args:
+            query (string)
+        """
+        return self._request('transactions', params={'query': query})
+
+    def get_unconfirmed_transactions(self, limit=None):
+        """
+        Get unconfirmed transactions.
+        Args:
+            limit (int)
+        """
+        return self._request('unconfirmed_txs', params={'limit': limit})
+
+    def get_max_gas_price(self, height=None):
+        """
+        Returns current max gas price.
+        Args:
+            height (int)
+        """
+        return self._request('max_gas', params={'height': height})
+
+    def get_min_gas_price(self):
+        """
+        Returns min gas price.
+        """
+        return self._request('min_gas_price')
+
     def _request(self, command, request_type='get', **kwargs):
         """
         Send all requests to API
