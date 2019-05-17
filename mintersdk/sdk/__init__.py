@@ -9,8 +9,9 @@ class ECDSA:
     @classmethod
     def sign(cls, message, private_key):
         """
-        @param message|string: message to sign
-        @param private_key|string: private_key
+        Args:
+            message (string): message to sign
+            private_key (string): private_key
         """
 
         v, r, s = bitcoin.ecdsa_raw_sign(message.encode(),
@@ -21,8 +22,9 @@ class ECDSA:
     @classmethod
     def recover(cls, message, vrs):
         """
-        @param message|string: message
-        @param vrs|tuple: tuple of v, r, s (r, s in hex)
+        Args:
+            message (string): message
+            vrs (tuple): tuple of v, r, s (r, s in hex)
         """
 
         # Convert r, s from hex to int.

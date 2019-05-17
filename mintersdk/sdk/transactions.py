@@ -86,7 +86,7 @@ class MinterTx(object):
         Sign transaction.
         This method can be called only from instances of inherited classes.
         Args:
-            private_key:string private key
+            private_key (string): private key
         Return:
             string
         """
@@ -116,7 +116,8 @@ class MinterTx(object):
     def get_hash(self):
         """
         Generate tx hash with prefix
-            @return: string
+        Returns:
+            string
         """
         if not hasattr(self, 'signed_tx') or not self.signed_tx:
             raise AttributeError('You need to sign transaction before')
@@ -172,7 +173,7 @@ class MinterTx(object):
     def get_fee(self):
         """
         Get fee of transaction in PIP.
-        Return:
+        Returns:
             int
         """
 
@@ -195,7 +196,7 @@ class MinterTx(object):
         """
         Generate tx object from raw tx
         Args:
-            raw_tx:string
+            raw_tx (string)
         Returns:
             MinterTx child instance
         """
@@ -259,9 +260,9 @@ class MinterTx(object):
         """
         Recover public key from tx.
         Args:
-            tx:dict transaction dict
+            tx (dict): transaction dict
         Returns:
-            public_key:string
+            public_key (string)
         """
 
         # Remember signature data and remove it from tx
