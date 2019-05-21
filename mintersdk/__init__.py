@@ -29,7 +29,7 @@ class MinterConvertor:
             return float(MinterHelper.pybcdiv(value, cls.DEFAULT))
 
     @classmethod
-    def convert_coin_name(cls, symbol):
+    def encode_coin_name(cls, symbol):
         """
         Add nulls to coin name
         Args:
@@ -38,6 +38,20 @@ class MinterConvertor:
             string
         """
         return symbol + chr(0) * (10 - len(symbol))
+
+    @classmethod
+    def decode_coin_name(cls, symbol):
+        """
+        Args:
+            symbol (bytes|str)
+        Returns:
+            string
+        """
+
+        if hasattr(symbol, 'decode'):
+            symbol = symbol.decode()
+
+        return symbol.replace(chr(0), '')
 
 
 class MinterHelper:
@@ -118,6 +132,10 @@ class MinterHelper:
         return khash.hexdigest()
 
     @classmethod
+    def hex2bin(cls, string):
+        return binascii.unhexlify(string)
+
+    @classmethod
     def hex2bin_recursive(cls, _dict):
         """
         hex2bin part - analog of PHP hex2bin.
@@ -146,6 +164,14 @@ class MinterHelper:
                 _dict[k] = binascii.unhexlify(v)
 
         return _dict
+
+    @classmethod
+    def bin2hex(cls, bts):
+        return binascii.hexlify(bts).decode()
+
+    @classmethod
+    def bin2int(cls, number):
+        return int(binascii.hexlify(number), 16)
 
     @classmethod
     def get_validator_address(cls, pub_key, upper=True):
