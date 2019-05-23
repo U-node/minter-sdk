@@ -12,7 +12,7 @@ setuptools.setup(
     description=u"Python SDK for Minter Network",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="http://gitetz.ustinov-pro.ru/minter/minter-sdk.git",
+    url="https://github.com/U-node/minter-sdk",
     packages=setuptools.find_packages(include=['mintersdk']),
     include_package_data=True,
     classifiers=(
