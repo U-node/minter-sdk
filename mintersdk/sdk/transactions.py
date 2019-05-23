@@ -239,6 +239,8 @@ class MinterTx(object):
             _class = MinterUnbondTx
         elif struct['type'] == MinterEditCandidateTx.TYPE:
             _class = MinterEditCandidateTx
+        elif struct['type'] == MinterMultiSendCoinTx.TYPE:
+            _class = MinterMultiSendCoinTx
         else:
             raise Exception('Undefined tx type.')
 
@@ -1040,6 +1042,91 @@ class MinterSendCoinTx(MinterTx):
             'to': raw_data[1],
             'value': raw_data[2]
         }
+
+
+class MinterMultiSendCoinTx(MinterTx):
+    """
+    Multi send transaction
+    """
+
+    # Type of transaction
+    TYPE = 13
+
+    # Fee units
+    COMMISSION = 5
+
+    def __init__(self, txs, **kwargs):
+        """
+        Args:
+            txs (list[dict{coin, to, value}]): list of send coin data
+        """
+        super().__init__(**kwargs)
+
+        self.txs = txs
+
+    def _structure_from_instance(self):
+        """
+        Override parent method to add tx special data.
+        """
+
+        struct = super()._structure_from_instance()
+
+        struct.update({
+            'type': self.TYPE,
+            'data': {
+                'txs': []
+            },
+            'signature_type': self.SIGNATURE_SINGLE_TYPE
+        })
+
+        # Populate multi data from each single tx.
+        for item in self.txs:
+            struct['data']['txs'].append([
+                MinterConvertor.encode_coin_name(item['coin']),
+                MinterHelper.hex2bin(
+                    MinterPrefix.remove_prefix(string=item['to'],
+                                               prefix=MinterPrefix.ADDRESS)
+                ),
+                MinterConvertor.convert_value(value=item['value'], to='pip')
+            ])
+
+        return struct
+
+    @classmethod
+    def _structure_to_kwargs(cls, structure):
+        """
+        Prepare decoded structure data to instance kwargs.
+        """
+
+        kwargs = super()._structure_to_kwargs(structure)
+
+        # Convert data values to verbose.
+        # Data will be passed as additional kwarg
+        for index, item in enumerate(kwargs['data']['txs']):
+            kwargs['data']['txs'][index] = {
+                'coin': MinterConvertor.decode_coin_name(item[0]),
+                'to': MinterPrefix.ADDRESS + MinterHelper.bin2hex(item[1]),
+                'value': MinterConvertor.convert_value(
+                    value=MinterHelper.bin2int(item[2]),
+                    to='bip'
+                )
+            }
+
+        # Populate data key values as kwargs
+        kwargs.update(kwargs['data'])
+
+        return kwargs
+
+    @classmethod
+    def _data_from_raw(cls, raw_data):
+        """
+        Parent method implementation
+        """
+        data = {'txs': []}
+        for item in raw_data[0]:
+            data['txs'].append([item[0], item[1], item[2]])
+
+        return data
 
 
 class MinterSetCandidateOffTx(MinterTx):

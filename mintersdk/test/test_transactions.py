@@ -8,7 +8,8 @@ from mintersdk.sdk.transactions import (
     MinterTx, MinterDelegateTx, MinterSendCoinTx, MinterBuyCoinTx,
     MinterCreateCoinTx, MinterDeclareCandidacyTx, MinterEditCandidateTx,
     MinterRedeemCheckTx, MinterSellAllCoinTx, MinterSellCoinTx,
-    MinterSetCandidateOffTx, MinterSetCandidateOnTx, MinterUnbondTx
+    MinterSetCandidateOffTx, MinterSetCandidateOnTx, MinterUnbondTx,
+    MinterMultiSendCoinTx
 )
 
 
@@ -498,6 +499,51 @@ class TestMinterEditCandidateTx(unittest.TestCase):
         self.assertEqual(tx.pub_key, self.TX.pub_key)
         self.assertEqual(tx.reward_address, self.TX.reward_address)
         self.assertEqual(tx.owner_address, self.TX.owner_address)
+
+
+class TestMinterMultiSendCoinTx(unittest.TestCase):
+
+    def setUp(self):
+        self.FROM = 'Mx31e61a05adbd13c6b625262704bc305bf7725026'
+        self.PRIVATE_KEY = '07bc17abdcee8b971bb8723e36fe9d2523306d5ab2d683631693238e0f9df142'
+        self.SIGNED_TX = 'f8b30102018a4d4e54000000000000000db858f856f854e98a4d4e540000000000000094fe60014a6e9ac91618f5d1cab3fd58cded61ee9988016345785d8a0000e98a4d4e540000000000000094ddab6281766ad86497741ff91b6b48fe85012e3c8802c68af0bb140000808001b845f8431ca0b15dcf2e013df1a2aea02e36a17af266d8ee129cdcb3e881d15b70c9457e7571a0226af7bdaca9d42d6774c100b22e0c7ba4ec8dd664d17986318e905613013283'
+        self.TX = MinterMultiSendCoinTx(**{
+            'nonce': 1,
+            'chain_id': MinterTx.TESTNET_CHAIN_ID,
+            'gas_coin': 'MNT',
+            'txs': [
+                {
+                    'coin': 'MNT',
+                    'to': 'Mxfe60014a6e9ac91618f5d1cab3fd58cded61ee99',
+                    'value': 0.1
+                },
+                {
+                    'coin': 'MNT',
+                    'to': 'Mxddab6281766ad86497741ff91b6b48fe85012e3c',
+                    'value': 0.2
+                }
+            ]
+        })
+
+    def test_valid_tx(self):
+        """
+        Is tx instance of needed TX class.
+        """
+
+        self.assertIsInstance(self.TX, MinterMultiSendCoinTx)
+
+    def test_sign_tx(self):
+        """
+        Sign transaction and check signed transaction
+        """
+        self.TX.sign(self.PRIVATE_KEY)
+
+        self.assertEqual(self.TX.signed_tx, self.SIGNED_TX)
+
+    def test_from_raw(self):
+        tx = MinterTx.from_raw(raw_tx=self.SIGNED_TX)
+
+        self.assertEqual(tx.from_mx, self.FROM)
 
 
 if __name__ == '__main__':
