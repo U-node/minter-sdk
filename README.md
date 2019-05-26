@@ -3,9 +3,11 @@
 <p align="center">
 </p>
 
-Initial release of official Minter's mainnet <a href="https://github.com/MinterTeam/minter-php-sdk">php SDK</a>
+Python SDK
 
-Ported to Python by <a href="https://www.u-node.net">https://www.u-node.net</a>'s masternode co-founder Roman Matusevich 
+Ported from official Minter's <a href="https://github.com/MinterTeam/minter-php-sdk">php SDK</a>
+
+Created by <a href="https://www.u-node.net">https://www.u-node.net</a>'s masternode co-founder Roman Matusevich 
 
 You can support our project by sending any Minter's coins to our wallet Mx6e0cd64694b1e143adaa7d4914080e748837aec9
 
