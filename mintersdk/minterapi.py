@@ -28,6 +28,8 @@ class MinterAPI(object):
             - read_timeout|float|int
         """
         self.api_url = api_url
+        if self.api_url[-1] != '/':
+            self.api_url += '/'
 
         for name, value in kwargs.items():
             setattr(self, name, value)
