@@ -233,12 +233,12 @@ class MinterAPI(object):
             elif request_type == 'post':
                 response = requests.post(url, **kwargs)
 
-            # If everything is ok, API return 200 with response data in json
-            if response.ok:
+            # Try to get json response.
+            try:
                 return response.json()
-
-            # It response is not ok
-            raise HTTPException('HTTP error (code: {})'.format(response.status_code))
+            except Exception as e:
+                msg = 'Response parse JSON error: {}; Response is: {}'
+                raise Exception(msg.format(e.__str__(), response.text))
         except requests.exceptions.ReadTimeout:
             raise
         except requests.exceptions.ConnectTimeout:
