@@ -21,12 +21,12 @@ class MinterConvertor:
             value (string): value to convert
             to (string): coin to convert value to
         Returns:
-            int|float
+            int|Decimal
         """
         if to == 'pip':
             return int(MinterHelper.pybcmul(value, cls.DEFAULT))
         elif to == 'bip':
-            return float(MinterHelper.pybcdiv(value, cls.DEFAULT))
+            return MinterHelper.pybcdiv(value, cls.DEFAULT)
 
     @classmethod
     def encode_coin_name(cls, symbol):
