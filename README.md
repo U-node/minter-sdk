@@ -21,7 +21,7 @@ You can create transaction by import transaction class and create object of this
 ### Create tx
 
 ```python
-from mitersdk.sdk.transactions import MinterDelegateTx
+from mintersdk.sdk.transactions import MinterDelegateTx
 tx = MinterDelegateTx(pub_key='Mp...', coin='MNT', stake=1, nonce=1, gas_coin='MNT')
 ```
 
