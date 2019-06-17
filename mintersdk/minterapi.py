@@ -4,7 +4,6 @@ Created on 26 окт. 2018 г.
 @author: Roman
 '''
 import requests
-from http.client import HTTPException
 
 
 class MinterAPI(object):
@@ -120,13 +119,19 @@ class MinterAPI(object):
         """
         return self._request('events', params={'height': height})
 
-    def get_candidates(self, height=None):
+    def get_candidates(self, height=None, include_stakes=False):
         """
         Get candidates
         Args:
             height (int): block height
         """
-        return self._request('candidates', params={'height': height})
+        return self._request(
+            'candidates',
+            params={
+                'height': height,
+                'include_stakes': str(include_stakes).lower()
+            }
+        )
 
     def get_coin_info(self, symbol, height=None):
         """
@@ -215,6 +220,18 @@ class MinterAPI(object):
         Returns min gas price.
         """
         return self._request('min_gas_price')
+
+    def get_missed_blocks(self, public_key, height=None):
+        """
+        Returns missed blocks by validator public key.
+        Args:
+            public_key (str): candidate public key
+            height (int): block chain height
+        """
+        return self._request(
+            'missed_blocks',
+            params={'pub_key': public_key, 'height': height}
+        )
 
     def _request(self, command, request_type='get', **kwargs):
         """
