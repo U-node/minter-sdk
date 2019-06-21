@@ -1,4 +1,4 @@
-<p align="center" background="black"><img src="un_logo_dark.svg" width="250"></p>
+<p align="center" background="black"><img src="un_top.svg" width="350"></p>
 
 <p align="center">
 </p>
