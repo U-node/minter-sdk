@@ -33,8 +33,5 @@ class ECDSA:
 
         # Get raw recover of public key.
         pub_key_raw = bitcoin.ecdsa_raw_recover(message, (vrs[0], rd, sd))
-        # Get x, y of public key and remove 0x from beginning.
-        x = hex(pub_key_raw[0]).replace('0x', '')
-        y = hex(pub_key_raw[1]).replace('0x', '')
 
-        return x + y
+        return bitcoin.encode_pubkey(pub_key_raw, 'hex_electrum')
