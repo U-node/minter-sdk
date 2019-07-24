@@ -2,7 +2,7 @@ import decimal
 import binascii
 import string
 import hashlib
-from Crypto.Hash import keccak
+import sha3
 
 
 class MinterConvertor:
@@ -121,12 +121,16 @@ class MinterHelper:
         Create Keccak hash.
         Args:
             data (bytes)
-            digest_bits (int )
+            digest_bits (int)
         Returns:
             hex (string)
         """
 
-        khash = keccak.new(digest_bits=digest_bits)
+        if digest_bits == 256:
+            khash = sha3.keccak_256()
+        else:
+            raise NotImplementedError
+
         khash.update(data)
 
         return khash.hexdigest()
