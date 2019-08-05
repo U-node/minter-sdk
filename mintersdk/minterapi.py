@@ -191,13 +191,15 @@ class MinterAPI(object):
         """
         return self._request('estimate_tx_commission', params={'tx': tx})
 
-    def get_transactions(self, query):
+    def get_transactions(self, query, page=1, page_size=100):
         """
         Get transactions by query.
         Args:
             query (string)
+            page (int)
+            page_size (int)
         """
-        return self._request('transactions', params={'query': query})
+        return self._request('transactions', params={'query': query, 'page': page, 'perPage': page_size})
 
     def get_unconfirmed_transactions(self, limit=None):
         """
