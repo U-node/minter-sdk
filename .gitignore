@@ -3,3 +3,4 @@
 /appenv/
 __pycache__
 *.sublime*
+.DS_Store
