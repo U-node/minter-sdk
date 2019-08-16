@@ -53,7 +53,7 @@ class MinterAPI(object):
             height (int): block height
         """
         return self._request('candidate',
-                             params={'pubkey': public_key, 'height': height})
+                             params={'pub_key': public_key, 'height': height})
 
     def get_validators(self, height=None):
         """
