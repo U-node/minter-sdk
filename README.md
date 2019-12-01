@@ -14,6 +14,10 @@ You can support our project by sending any Minter's coins to our wallet Mx6e0cd6
 Feel free to delegate to our 3% masternode Mp02bc3c3f77d5ab9732ef9fc3801a6d72dc18f88328c14dc735648abfe551f50f
 
 
+## Installation
+`pip install minter-sdk`
+
+
 ## SDK use
 
 You can create transaction by import transaction class and create object of this class.
