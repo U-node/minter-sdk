@@ -4,3 +4,7 @@
 __pycache__
 *.sublime*
 .DS_Store
+.idea
+build
+dist
+*.egg-info
