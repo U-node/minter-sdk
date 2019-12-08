@@ -18,6 +18,11 @@ class MinterAPI(object):
 
     # Timeout reading from host
     read_timeout = 3
+    
+    # Default request headers
+    req_headers = {
+      'Content-Type':'application/json'
+    }
 
     def __init__(self, api_url, **kwargs):
         """
@@ -25,6 +30,7 @@ class MinterAPI(object):
         @param kwargs: available attributes are
             - connect_timeout|float,int
             - read_timeout|float|int
+            - req_headers|object
         """
         self.api_url = api_url
         if self.api_url[-1] != '/':
@@ -242,7 +248,11 @@ class MinterAPI(object):
         # Add timeouts if were not set
         if not kwargs.get('timeout', None):
             kwargs['timeout'] = (self.connect_timeout, self.read_timeout)
-
+        
+        # Add headers if not set
+        if not kwargs.get('headers', None):
+            kwargs['headers'] = self.req_headers
+            
         # Trying make request
         try:
             url = self.api_url + command
