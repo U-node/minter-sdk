@@ -621,7 +621,7 @@ class MinterDelegateTx(MinterTx):
     TYPE = 7
 
     # Fee units
-    COMMISSION = 100
+    COMMISSION = 200
 
     def __init__(self, pub_key, coin, stake, **kwargs):
         super().__init__(**kwargs)

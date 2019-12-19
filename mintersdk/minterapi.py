@@ -18,10 +18,10 @@ class MinterAPI(object):
 
     # Timeout reading from host
     read_timeout = 3
-    
+
     # Default request headers
-    req_headers = {
-      'Content-Type':'application/json'
+    headers = {
+      'Content-Type': 'application/json'
     }
 
     def __init__(self, api_url, **kwargs):
@@ -195,6 +195,9 @@ class MinterAPI(object):
         Args:
             tx (string): signed transaction
         """
+        if tx[:2] != '0x':
+            tx = '0x' + tx
+
         return self._request('estimate_tx_commission', params={'tx': tx})
 
     def get_transactions(self, query, page=None, limit=None):
@@ -248,11 +251,11 @@ class MinterAPI(object):
         # Add timeouts if were not set
         if not kwargs.get('timeout', None):
             kwargs['timeout'] = (self.connect_timeout, self.read_timeout)
-        
-        # Add headers if not set
+
+        # Add headers
         if not kwargs.get('headers', None):
-            kwargs['headers'] = self.req_headers
-            
+            kwargs['headers'] = self.headers
+
         # Trying make request
         try:
             url = self.api_url + command
