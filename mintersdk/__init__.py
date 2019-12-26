@@ -3,6 +3,9 @@ import binascii
 import string
 import hashlib
 import sha3
+import pyqrcode
+import random
+import os
 
 
 class MinterConvertor:
@@ -195,6 +198,55 @@ class MinterHelper:
         vaddress = hashlib.sha256(pub_key).hexdigest()[:40]
 
         return vaddress.upper() if upper else vaddress
+
+    @staticmethod
+    def generate_qr(text, fn=None, path='', error='H', version=None, mode=None, output='svg', module_color='black',
+                    background='white', quiet_zone=4):
+        """
+        Generate QR code from text and save to file.
+        Detailed documentation for `pyqrcode` package can be found here: https://pythonhosted.org/PyQRCode/index.html
+        Args:
+            text (str): Text, that should be encoded to QR
+            fn (str): Filename for generated QR. If not provided random filename is generated.
+            path (str): Path to save generate QR
+            error (str|int): The error parameter sets the error correction level of the code.
+                             Each level has an associated name given by a letter: L, M, Q, or H;
+                             each level can correct up to 7, 15, 25, or 30 percent of the data respectively.
+            version (int): The version parameter specifies the size and data capacity of the code.
+                           Versions are any integer between 1 and 40
+            mode (str): The mode parameter sets how the contents will be encoded.
+                        Three of the four possible encodings are available. By default, the object uses the most
+                        efficient encoding for the contents. You can override this behavior by setting this parameter.
+            output (str): Render modes. Available: text|terminal|svg. In `text`|`terminal` modes QR code is printed,
+                          `svg` mode saves QR code to file `fn` to path `path`.
+            module_color (str): String color of QR code data. Is used only for `terminal` and `svg` modes.
+            background (str): String color of QR code background. Is used only for `terminal` and `svg` modes.
+            quiet_zone (int): QR code quiet zone.
+        Returns:
+            fnpath (str): Path to generated QR
+        """
+
+        # Generate QR code object
+        qrcode = pyqrcode.create(content=text, error=error, version=version, mode=mode)
+
+        # Render QR code depending on `output` param
+        if output == 'text':
+            print(qrcode.text(quiet_zone=quiet_zone))
+        elif output == 'terminal':
+            print(qrcode.terminal(module_color=module_color, background=background, quiet_zone=quiet_zone))
+        elif output == 'svg':
+            # Generate filename, if not provided
+            if not fn:
+                fn = text + str(random.randint(10000, 99999))
+                fn = hashlib.sha256(fn.encode()).hexdigest()[:10]
+            fnpath = os.path.join(path, fn + '.svg')
+
+            # Save QR code to file
+            qrcode.svg(file=fnpath, module_color=module_color, background=background, quiet_zone=quiet_zone)
+
+            return fnpath
+        else:
+            raise Exception('Wrong QR code render mode')
 
 
 class MinterPrefix:

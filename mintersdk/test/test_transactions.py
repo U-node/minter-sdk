@@ -1,8 +1,6 @@
-'''
-Created on 31 окт. 2018 г.
-
-@author: Roman
-'''
+"""
+@author: rymka1989
+"""
 import unittest
 from mintersdk.sdk.transactions import (
     MinterTx, MinterDelegateTx, MinterSendCoinTx, MinterBuyCoinTx,
@@ -134,7 +132,7 @@ class TestMinterDeclareCandidacyTx(unittest.TestCase):
             'gas_coin': 'MNT',
             'address': 'Mx9f7fd953c2c69044b901426831ed03ee0bd0597a',
             'pub_key': 'Mp0eb98ea04ae466d8d38f490db3c99b3996a90e24243952ce9822c6dc1e2c1a43',
-            'comission': 10,
+            'commission': 10,
             'coin': 'MNT',
             'stake': 5
         })
@@ -160,7 +158,7 @@ class TestMinterDeclareCandidacyTx(unittest.TestCase):
         self.assertEqual(tx.from_mx, self.TX.address)
         self.assertEqual(tx.address, self.TX.address)
         self.assertEqual(tx.pub_key, self.TX.pub_key)
-        self.assertEqual(tx.comission, self.TX.comission)
+        self.assertEqual(tx.commission, self.TX.commission)
         self.assertEqual(tx.coin, self.TX.coin)
         self.assertEqual(tx.stake, self.TX.stake)
 
