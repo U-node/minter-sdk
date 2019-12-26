@@ -49,6 +49,7 @@ To get all required and optional arguments, look for source code.
 from mintersdk.sdk.transactions import MinterTx
 tx = MinterTx.from_raw(raw_tx='...')
 ```
+You will get tx object of tx type.
 
 
 ### Minter deeplink
@@ -84,4 +85,10 @@ url_link = dl.generate()
 url_link = dl.generate(password='mystrongpassword')
 ```
 
-You will get tx object of tx type.
+Then you might want to create QR-code from your deeplink
+```
+from mintersdk import MinterHelper
+qr_code_filepath = MinterHelper.generate_qr(text=url_link)
+
+# For additional params information for `MinterHelper.generate_qr()`, please see sourcecode for this method.
+```
