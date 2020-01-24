@@ -166,8 +166,12 @@ class MinterTx(object):
 
         # Commission for payload and service_data bytes
         commission = MinterHelper.pybcadd(
-            MinterHelper.pybcmul(len(self.payload), self.FEE_DEFAULT_MULTIPLIER),
-            MinterHelper.pybcmul(len(self.service_data), self.FEE_DEFAULT_MULTIPLIER)
+            MinterHelper.pybcmul(
+                len(bytes(self.payload, encoding='utf-8')) * self.PAYLOAD_COMMISSION,
+                self.FEE_DEFAULT_MULTIPLIER),
+            MinterHelper.pybcmul(
+                len(bytes(self.service_data, encoding='utf-8')) * self.PAYLOAD_COMMISSION,
+                self.FEE_DEFAULT_MULTIPLIER)
         )
 
         return int(MinterHelper.pybcadd(gas_price, commission))
@@ -890,7 +894,8 @@ class MinterMultiSendCoinTx(MinterTx):
     TYPE = 13
 
     # Fee units
-    COMMISSION = 5
+    COMMISSION = 10
+    COMMISSION_PER_RECIPIENT = 5
 
     def __init__(self, txs, **kwargs):
         """
@@ -900,6 +905,13 @@ class MinterMultiSendCoinTx(MinterTx):
         super().__init__(**kwargs)
 
         self.txs = txs
+
+    def get_fee(self):
+        """ Override parent method to calc multisend-specific fee: (n_txs - 1) * 5 units """
+        base_fee = super().get_fee()
+        recipients_fee = MinterHelper.pybcmul(
+            (len(self.txs) - 1) * self.COMMISSION_PER_RECIPIENT, self.FEE_DEFAULT_MULTIPLIER)
+        return int(MinterHelper.pybcadd(base_fee, recipients_fee))
 
     def _structure_from_instance(self):
         """ Override parent method to add tx special data. """
