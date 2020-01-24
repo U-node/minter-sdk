@@ -166,8 +166,8 @@ class MinterTx(object):
 
         # Commission for payload and service_data bytes
         commission = MinterHelper.pybcadd(
-            MinterHelper.pybcmul(len(self.payload), self.FEE_DEFAULT_MULTIPLIER),
-            MinterHelper.pybcmul(len(self.service_data), self.FEE_DEFAULT_MULTIPLIER)
+            MinterHelper.pybcmul(len(bytes(self.payload, encoding='utf-8')), self.FEE_DEFAULT_MULTIPLIER),
+            MinterHelper.pybcmul(len(bytes(self.service_data, encoding='utf-8')), self.FEE_DEFAULT_MULTIPLIER)
         )
 
         return int(MinterHelper.pybcadd(gas_price, commission))
