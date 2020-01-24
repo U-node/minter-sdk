@@ -19,6 +19,7 @@ class TestMinterTx(unittest.TestCase):
         self.TX_FROM = 'Mx9f7fd953c2c69044b901426831ed03ee0bd0597a'
         self.TX_TYPE = 7
         self.TX_STAKE = 10
+        self.TX_PAYLOAD = '🔳'  # 4 bytes
         self.tx = MinterTx.from_raw(self.SIGNED_TX)
 
     def test_instance(self):
@@ -542,6 +543,54 @@ class TestMinterMultiSendCoinTx(unittest.TestCase):
         tx = MinterTx.from_raw(raw_tx=self.SIGNED_TX)
 
         self.assertEqual(tx.from_mx, self.FROM)
+
+
+class TestTxFees(unittest.TestCase):
+
+    def setUp(self):
+        self.TO = 'Mx31e61a05adbd13c6b625262704bc305bf7725026'
+        self.PRIVATE_KEY = '07bc17abdcee8b971bb8723e36fe9d2523306d5ab2d683631693238e0f9df142'
+        self.TX_PAYLOAD_UTF = '🔳'  # 4 bytes
+        self.EXPECTED_SEND_COIN_FEE = 18000000000000000
+
+        self.MULTISEND_RECIPIENTS = [
+            {
+                'coin': 'MNT',
+                'to': 'Mxfe60014a6e9ac91618f5d1cab3fd58cded61ee99',
+                'value': 0.1
+            },
+            {
+                'coin': 'MNT',
+                'to': 'Mxddab6281766ad86497741ff91b6b48fe85012e3c',
+                'value': 0.2
+            }
+        ]
+        self.EXPECTED_MULTISEND_FEE = 15000000000000000
+
+    def test_payload_fee(self):
+        tx = MinterSendCoinTx(**{
+            'nonce': 1,
+            'chain_id': MinterTx.TESTNET_CHAIN_ID,
+            'gas_coin': 'MNT',
+            'to': self.TO,
+            'coin': 'MNT',
+            'value': 1,
+            'payload': self.TX_PAYLOAD_UTF
+        })
+        tx.sign(self.PRIVATE_KEY)
+        actual_fee = tx.get_fee()
+        self.assertEqual(self.EXPECTED_SEND_COIN_FEE, actual_fee)
+
+    def test_multisend_fee(self):
+        tx = MinterMultiSendCoinTx(**{
+            'nonce': 1,
+            'chain_id': MinterTx.TESTNET_CHAIN_ID,
+            'gas_coin': 'MNT',
+            'txs': self.MULTISEND_RECIPIENTS
+        })
+        tx.sign(self.PRIVATE_KEY)
+        actual_fee = tx.get_fee()
+        self.assertEqual(self.EXPECTED_MULTISEND_FEE, actual_fee)
 
 
 if __name__ == '__main__':
