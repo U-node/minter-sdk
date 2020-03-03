@@ -91,6 +91,10 @@ class MinterTx(object):
 
         # Set tx signature type
         self.signature_type = self.SIGNATURE_SINGLE_TYPE
+
+        if not ms_address and type(private_key) is not str:
+            raise Exception('Please, provide a single `private_key` or set `ms_address` argument for multisig tx')
+
         if ms_address:
             if type(private_key) is str:
                 private_key = [private_key]
