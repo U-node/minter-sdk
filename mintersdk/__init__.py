@@ -21,7 +21,7 @@ class MinterConvertor:
         """
         Convert values from/to pip/bip.
         Args:
-            value (string): value to convert
+            value (string|int|Decimal|float): value to convert
             to (string): coin to convert value to
         Returns:
             int|Decimal

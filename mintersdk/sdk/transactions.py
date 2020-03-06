@@ -72,19 +72,33 @@ class MinterTx(object):
         self.gas_price = gas_price
         self.payload = payload
         self.service_data = service_data
+        self.signature_type = None
+        self.signed_tx = None
 
         for name, value in kwargs.items():
             setattr(self, name, value)
 
-    def sign(self, private_key):
+    def sign(self, private_key, ms_address=None):
         """
         Sign transaction.
         This method can be called only from instances of inherited classes.
         Args:
-            private_key (string): private key
+            private_key (string|list[string]): private key
+            ms_address (string): Multi signature address to sign tx by
         Return:
             string
         """
+
+        # Set tx signature type
+        self.signature_type = self.SIGNATURE_SINGLE_TYPE
+
+        if not ms_address and type(private_key) is not str:
+            raise Exception('Please, provide a single `private_key` or set `ms_address` argument for multisig tx')
+
+        if ms_address:
+            if type(private_key) is str:
+                private_key = [private_key]
+            self.signature_type = self.SIGNATURE_MULTI_TYPE
 
         # Get structure populated with instance data
         tx = self._structure_from_instance()
@@ -99,9 +113,19 @@ class MinterTx(object):
         _keccak = MinterHelper.keccak_hash(tx_rlp)
 
         # Signature data
-        tx['signature_data'] = rlp.encode(
-            ECDSA.sign(_keccak, private_key)
-        )
+        if self.signature_type == self.SIGNATURE_SINGLE_TYPE:
+            signature = ECDSA.sign(_keccak, private_key)
+        else:
+            # Add multisig address to signature
+            signature = [
+                MinterHelper.hex2bin(MinterPrefix.remove_prefix(string=ms_address, prefix=MinterPrefix.ADDRESS)),
+                []
+            ]
+
+            # Sign by each private key and add to total signature
+            for pk in private_key:
+                signature[1].append(ECDSA.sign(_keccak, pk))
+        tx['signature_data'] = rlp.encode(signature)
 
         tx_rlp = rlp.encode(list(tx.values()))
         self.signed_tx = binascii.hexlify(tx_rlp).decode()
@@ -136,7 +160,8 @@ class MinterTx(object):
             'gas_price': self.gas_price,
             'gas_coin': MinterConvertor.encode_coin_name(self.gas_coin),
             'payload': self.payload,
-            'service_data': self.service_data
+            'service_data': self.service_data,
+            'signature_type': self.signature_type
         })
 
         return struct
@@ -203,13 +228,28 @@ class MinterTx(object):
 
         # Get signature data
         signature_data = rlp.decode(tx[9])
-        struct.update({
-            'signature_data': {
+        if struct['signature_type'] == cls.SIGNATURE_SINGLE_TYPE:
+            signature_data = {
                 'v': int(binascii.hexlify(signature_data[0]), 16),
                 'r': binascii.hexlify(signature_data[1]).decode(),
                 's': binascii.hexlify(signature_data[2]).decode()
             }
-        })
+        else:
+            # Decode signatures
+            signatures = []
+            for signature in signature_data[1]:
+                signatures.append({
+                    'v': int(binascii.hexlify(signature[0]), 16),
+                    'r': binascii.hexlify(signature[1]).decode(),
+                    's': binascii.hexlify(signature[2]).decode()
+                })
+
+            # Create decoded signature data
+            signature_data = {
+                'from_mx': MinterPrefix.ADDRESS + MinterHelper.bin2hex(signature_data[0]),
+                'signatures': signatures
+            }
+        struct['signature_data'] = signature_data
 
         # Find out which of tx instance need to create depending on it's type
         data = rlp.decode(tx[5])
@@ -242,17 +282,12 @@ class MinterTx(object):
         else:
             raise Exception('Undefined tx type.')
 
-        # Set tx data to minter dict
-        struct.update({
-            'data': _class._data_from_raw(data)
-        })
+        # Set tx data
+        struct['data'] =  _class._data_from_raw(data)
 
-        # Recover public key.
-        # We should not change curent struct, so pass copy
-        # of the struct to recover method.
-        public_key = cls.recover_public_key(copy.copy(struct))
+        # Set sender address and raw tx to minter dict ONLY AFTER tx data was set
         struct.update({
-            'from_mx': MinterWallet.get_address_from_public_key(public_key),
+            'from_mx': cls.get_sender_address(tx=copy.copy(struct)),
             'signed_tx': raw_tx
         })
 
@@ -263,18 +298,25 @@ class MinterTx(object):
         return _class(**kwargs)
 
     @classmethod
-    def recover_public_key(cls, tx):
+    def get_sender_address(cls, tx):
         """
-        Recover public key from tx.
+        Get sender address from tx.
+        Recover public key from tx and then get address from public key, if tx has single signature type, or get
+        decoded sender address, if tx has multi signature type.
         Args:
             tx (dict): transaction dict
         Returns:
-            public_key (string)
+            Minter address (string)
         """
 
         # Remember signature data and remove it from tx
         signature_data = tx.pop('signature_data')
 
+        # If there is sender address in signature data (multi signature tx), return it
+        if signature_data.get('from_mx'):
+            return signature_data['from_mx']
+
+        # Otherwise (single signature tx), recover public key and get address from public key
         # Unhexlify (convert to bin (ascii)) all non-numeric dict values
         tx = MinterHelper.hex2bin_recursive(tx)
 
@@ -286,9 +328,9 @@ class MinterTx(object):
         _keccak = MinterHelper.keccak_hash(tx_rlp)
 
         # Recover public key
-        public_key = ECDSA.recover(_keccak, tuple(signature_data.values()))
+        public_key = MinterPrefix.PUBLIC_KEY + ECDSA.recover(_keccak, tuple(signature_data.values()))
 
-        return MinterPrefix.PUBLIC_KEY + public_key
+        return MinterWallet.get_address_from_public_key(public_key)
 
     @classmethod
     def _data_from_raw(cls, raw_data):
@@ -337,8 +379,7 @@ class MinterBuyCoinTx(MinterTx):
                 'value_to_buy': MinterConvertor.convert_value(value=self.value_to_buy, to='pip'),
                 'coin_to_sell': MinterConvertor.encode_coin_name(self.coin_to_sell),
                 'max_value_to_sell': MinterConvertor.convert_value(value=self.max_value_to_sell, to='pip')
-            },
-            'signature_type': self.SIGNATURE_SINGLE_TYPE
+            }
         })
 
         return struct
@@ -420,8 +461,7 @@ class MinterCreateCoinTx(MinterTx):
                 'initial_amount': MinterConvertor.convert_value(value=self.initial_amount, to='pip'),
                 'initial_reserve': MinterConvertor.convert_value(value=self.initial_reserve, to='pip'),
                 'crr': '' if self.crr == 0 else self.crr
-            },
-            'signature_type': self.SIGNATURE_SINGLE_TYPE
+            }
         })
 
         return struct
@@ -509,8 +549,7 @@ class MinterDeclareCandidacyTx(MinterTx):
                 'commission': '' if self.commission == 0 else self.commission,
                 'coin': MinterConvertor.encode_coin_name(self.coin),
                 'stake': MinterConvertor.convert_value(value=self.stake, to='pip')
-            },
-            'signature_type': self.SIGNATURE_SINGLE_TYPE
+            }
         })
 
         return struct
@@ -575,8 +614,7 @@ class MinterDelegateTx(MinterTx):
                 'pub_key': MinterHelper.hex2bin(MinterPrefix.remove_prefix(self.pub_key, MinterPrefix.PUBLIC_KEY)),
                 'coin': MinterConvertor.encode_coin_name(self.coin),
                 'stake': MinterConvertor.convert_value(value=self.stake, to='pip')
-            },
-            'signature_type': self.SIGNATURE_SINGLE_TYPE
+            }
         })
 
         return struct
@@ -640,8 +678,7 @@ class MinterRedeemCheckTx(MinterTx):
             'data': {
                 'check': MinterHelper.hex2bin(MinterPrefix.remove_prefix(self.check, MinterPrefix.CHECK)),
                 'proof': MinterHelper.hex2bin(self.proof)
-            },
-            'signature_type': self.SIGNATURE_SINGLE_TYPE
+            }
         })
 
         return struct
@@ -707,8 +744,7 @@ class MinterSellAllCoinTx(MinterTx):
                 'coin_to_sell': MinterConvertor.encode_coin_name(self.coin_to_sell),
                 'coin_to_buy': MinterConvertor.encode_coin_name(self.coin_to_buy),
                 'min_value_to_buy': MinterConvertor.convert_value(value=self.min_value_to_buy, to='pip')
-            },
-            'signature_type': self.SIGNATURE_SINGLE_TYPE
+            }
         })
 
         return struct
@@ -782,8 +818,7 @@ class MinterSellCoinTx(MinterTx):
                 'value_to_sell': MinterConvertor.convert_value(value=self.value_to_sell, to='pip'),
                 'coin_to_buy': MinterConvertor.encode_coin_name(self.coin_to_buy),
                 'min_value_to_buy': MinterConvertor.convert_value(value=self.min_value_to_buy, to='pip')
-            },
-            'signature_type': self.SIGNATURE_SINGLE_TYPE
+            }
         })
 
         return struct
@@ -852,8 +887,7 @@ class MinterSendCoinTx(MinterTx):
                 'coin': MinterConvertor.encode_coin_name(self.coin),
                 'to': MinterHelper.hex2bin(MinterPrefix.remove_prefix(string=self.to, prefix=MinterPrefix.ADDRESS)),
                 'value': MinterConvertor.convert_value(value=self.value, to='pip')
-            },
-            'signature_type': self.SIGNATURE_SINGLE_TYPE
+            }
         })
 
         return struct
@@ -922,8 +956,7 @@ class MinterMultiSendCoinTx(MinterTx):
             'type': self.TYPE,
             'data': {
                 'txs': []
-            },
-            'signature_type': self.SIGNATURE_SINGLE_TYPE
+            }
         })
 
         # Populate multi data from each single tx.
@@ -996,8 +1029,7 @@ class MinterSetCandidateOffTx(MinterTx):
                 'pub_key': MinterHelper.hex2bin(
                     MinterPrefix.remove_prefix(string=self.pub_key, prefix=MinterPrefix.PUBLIC_KEY)
                 )
-            },
-            'signature_type': self.SIGNATURE_SINGLE_TYPE
+            }
         })
 
         return struct
@@ -1057,8 +1089,7 @@ class MinterSetCandidateOnTx(MinterTx):
                 'pub_key': MinterHelper.hex2bin(
                     MinterPrefix.remove_prefix(string=self.pub_key, prefix=MinterPrefix.PUBLIC_KEY)
                 )
-            },
-            'signature_type': self.SIGNATURE_SINGLE_TYPE
+            }
         })
 
         return struct
@@ -1124,8 +1155,7 @@ class MinterUnbondTx(MinterTx):
                 ),
                 'coin': MinterConvertor.encode_coin_name(self.coin),
                 'value': MinterConvertor.convert_value(value=self.value, to='pip')
-            },
-            'signature_type': self.SIGNATURE_SINGLE_TYPE
+            }
         })
 
         return struct
@@ -1199,8 +1229,7 @@ class MinterEditCandidateTx(MinterTx):
                 'owner_address': MinterHelper.hex2bin(
                     MinterPrefix.remove_prefix(string=self.owner_address, prefix=MinterPrefix.ADDRESS)
                 )
-            },
-            'signature_type': self.SIGNATURE_SINGLE_TYPE
+            }
         })
 
         return struct
