@@ -28,8 +28,8 @@ api = MinterAPI(api_url=node_url, **kwargs)
 You can pass `requests` package attributes as `**kwargs`  
 E.g. `api = MinterAPI(api_url=node_url, timeout(1, 3), **kwargs)`
 
-### Methods
-- `api.get_status()`  
+## Methods
+- `get_status()`  
   Returns node status info.
   
 - `get_candidate(public_key, height=None)`  
