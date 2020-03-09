@@ -636,6 +636,14 @@ class TestMinterSendMultisigTx(unittest.TestCase):
         self.assertEqual(tx.coin, self.TX.coin)
         self.assertEqual(tx.value, self.TX.value)
 
+    def test_add_signature(self):
+        # Sign tx with 2 of 3 private keys
+        self.TX.sign(private_key=self.PRIVATE_KEYS[:2], ms_address=self.FROM)
+        # Add signature by 3rd private key
+        self.TX = MinterTx.add_signature(self.TX.signed_tx, self.PRIVATE_KEYS[2])
+
+        self.assertEqual(self.TX.signed_tx, self.SIGNED_TX)
+
 
 if __name__ == '__main__':
     unittest.main()

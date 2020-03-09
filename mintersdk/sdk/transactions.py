@@ -78,6 +78,38 @@ class MinterTx(object):
         for name, value in kwargs.items():
             setattr(self, name, value)
 
+    def generate_tx_keccak(self):
+        """
+        Create structure from instance and create keccak hash from populated structure
+        Returns:
+            tx_struct (dict), keccak (str)
+        """
+        # Get structure populated with instance data
+        tx_struct = self._structure_from_instance()
+        # Remove signature data, it's not needed before getting Keccak
+        tx_struct.pop('signature_data')
+
+        # Encode tx data to RLP
+        tx_struct['data'] = rlp.encode(list(tx_struct['data'].values()))
+
+        # Encode all tx to RLP and create Keccak hash
+        tx_rlp = rlp.encode(list(tx_struct.values()))
+        _keccak = MinterHelper.keccak_hash(tx_rlp)
+
+        return tx_struct, _keccak
+
+    @staticmethod
+    def generate_signed_tx(tx_struct):
+        """
+        Generate signed tx hash from it's structure
+        Args:
+            tx_struct (dict): populated tx structure dict
+        Returns:
+            signed_tx hash (str)
+        """
+        tx_rlp = rlp.encode(list(tx_struct.values()))
+        return binascii.hexlify(tx_rlp).decode()
+
     def sign(self, private_key, ms_address=None):
         """
         Sign transaction.
@@ -100,17 +132,8 @@ class MinterTx(object):
                 private_key = [private_key]
             self.signature_type = self.SIGNATURE_MULTI_TYPE
 
-        # Get structure populated with instance data
-        tx = self._structure_from_instance()
-        # Remove signature data, it's not needed before getting Keccak
-        tx.pop('signature_data')
-
-        # Encode tx data to RLP
-        tx['data'] = rlp.encode(list(tx['data'].values()))
-
         # Encode all tx to RLP and create Keccak hash
-        tx_rlp = rlp.encode(list(tx.values()))
-        _keccak = MinterHelper.keccak_hash(tx_rlp)
+        tx_struct, _keccak = self.generate_tx_keccak()
 
         # Signature data
         if self.signature_type == self.SIGNATURE_SINGLE_TYPE:
@@ -125,10 +148,9 @@ class MinterTx(object):
             # Sign by each private key and add to total signature
             for pk in private_key:
                 signature[1].append(ECDSA.sign(_keccak, pk))
-        tx['signature_data'] = rlp.encode(signature)
+        tx_struct['signature_data'] = rlp.encode(signature)
 
-        tx_rlp = rlp.encode(list(tx.values()))
-        self.signed_tx = binascii.hexlify(tx_rlp).decode()
+        self.signed_tx = self.generate_signed_tx(tx_struct)
 
     def get_hash(self):
         """
@@ -240,8 +262,8 @@ class MinterTx(object):
             for signature in signature_data[1]:
                 signatures.append({
                     'v': int(binascii.hexlify(signature[0]), 16),
-                    'r': binascii.hexlify(signature[1]).decode(),
-                    's': binascii.hexlify(signature[2]).decode()
+                    'r': int(binascii.hexlify(signature[1]), 16),
+                    's': int(binascii.hexlify(signature[2]), 16)
                 })
 
             # Create decoded signature data
@@ -331,6 +353,48 @@ class MinterTx(object):
         public_key = MinterPrefix.PUBLIC_KEY + ECDSA.recover(_keccak, tuple(signature_data.values()))
 
         return MinterWallet.get_address_from_public_key(public_key)
+
+    @classmethod
+    def add_signature(cls, signed_tx, private_key):
+        """
+        Add signature to already signed tx. Method is available only for multisig txs
+        Args:
+            signed_tx (str): signed tx
+            private_key (str): private key
+        Returns:
+            tx object
+        """
+
+        # Create tx instance from raw tx
+        tx = cls.from_raw(signed_tx)
+
+        # Check tx to be multi signature type
+        if tx.signature_type != cls.SIGNATURE_MULTI_TYPE:
+            raise Exception('Signature can be added only to tx with multi signature type')
+
+        # Convert signature data from verbose dict to needed list of signatures
+        signature_data = [
+            MinterHelper.hex2bin(
+                MinterPrefix.remove_prefix(string=tx.signature_data['from_mx'], prefix=MinterPrefix.ADDRESS)
+            ),
+            [list(signature.values()) for signature in tx.signature_data['signatures']]
+        ]
+
+        # Get tx populated structure and keccak hash from this structure
+        tx_struct, keccak = tx.generate_tx_keccak()
+
+        # Create new signature and update signatures list and signatures attribute of tx
+        signature = ECDSA.sign(keccak, private_key)
+        signature_data[1].append(signature)
+        tx.signature_data['signatures'].append({'v': signature[0], 'r': signature[1], 's': signature[2]})
+
+        # Update resulting struct signature data
+        tx_struct['signature_data'] = rlp.encode(signature_data)
+
+        # Generate new signed tx and update tx object attribute
+        tx.signed_tx = cls.generate_signed_tx(tx_struct)
+
+        return tx
 
     @classmethod
     def _data_from_raw(cls, raw_data):
