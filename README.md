@@ -289,13 +289,13 @@ tx = MinterTx.from_raw(raw_tx='...')
 
 # Minter deeplink
 Let's create a MinterSendCoinTx
-```
+```python
 from mintersdk.sdk.transactions import MinterSendCoinTx
 tx = MinterSendCoinTx(coin='BIP', to='Mx18467bbb64a8edf890201d526c35957d82be3d95', value=1.23456789, nonce=1, gas_coin='MNT', gas_price=1, payload='Hello World')
 ```
 
 Now it's time to create deeplink
-```
+```python
 from mintersdk.sdk.deeplink import MinterDeeplink
 dl = MinterDeeplink(tx=tx, data_only=False)
 
@@ -304,7 +304,7 @@ dl = MinterDeeplink(tx=tx, data_only=False)
 ```
 
 After deeplink object is created, you can override it's attributes, e.g.
-```
+```python
 dl = MinterDeeplink(tx=tx)
 dl.nonce = ''
 dl.gas_coin = 'MNT'
@@ -312,7 +312,7 @@ dl.gas_price = 10
 ```
 
 When your deeplink object is ready, generate it
-```
+```python
 url_link = dl.generate()
 
 # If password check is needed, pass password to generate method
@@ -320,7 +320,7 @@ url_link = dl.generate(password='mystrongpassword')
 ```
 
 Then you might want to create QR-code from your deeplink
-```
+```python
 from mintersdk import MinterHelper
 qr_code_filepath = MinterHelper.generate_qr(text=url_link)
 
