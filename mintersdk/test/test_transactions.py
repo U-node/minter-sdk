@@ -69,6 +69,13 @@ class TestMinterBuyCoinTx(unittest.TestCase):
 
         self.assertEqual(self.TX.signed_tx, self.SIGNED_TX)
 
+    def test_sign_with_signature(self):
+        self.TX.signature_type = MinterTx.SIGNATURE_SINGLE_TYPE
+        signature = self.TX.generate_signature(self.PRIVATE_KEY)
+        self.TX.sign(signature=signature)
+
+        self.assertEqual(self.TX.signed_tx, self.SIGNED_TX)
+
     def test_from_raw(self):
         tx = MinterTx.from_raw(raw_tx=self.SIGNED_TX)
 
@@ -108,6 +115,13 @@ class TestMinterCreateCoinTx(unittest.TestCase):
         Sign transaction and check signed transaction
         """
         self.TX.sign(self.PRIVATE_KEY)
+
+        self.assertEqual(self.TX.signed_tx, self.SIGNED_TX)
+
+    def test_sign_with_signature(self):
+        self.TX.signature_type = MinterTx.SIGNATURE_SINGLE_TYPE
+        signature = self.TX.generate_signature(self.PRIVATE_KEY)
+        self.TX.sign(signature=signature)
 
         self.assertEqual(self.TX.signed_tx, self.SIGNED_TX)
 
@@ -153,6 +167,13 @@ class TestMinterDeclareCandidacyTx(unittest.TestCase):
 
         self.assertEqual(self.TX.signed_tx, self.SIGNED_TX)
 
+    def test_sign_with_signature(self):
+        self.TX.signature_type = MinterTx.SIGNATURE_SINGLE_TYPE
+        signature = self.TX.generate_signature(self.PRIVATE_KEY)
+        self.TX.sign(signature=signature)
+
+        self.assertEqual(self.TX.signed_tx, self.SIGNED_TX)
+
     def test_from_raw(self):
         tx = MinterTx.from_raw(raw_tx=self.SIGNED_TX)
 
@@ -195,6 +216,13 @@ class TestMinterDelegateTx(unittest.TestCase):
 
         self.assertEqual(self.TX.signed_tx, self.SIGNED_TX)
 
+    def test_sign_with_signature(self):
+        self.TX.signature_type = MinterTx.SIGNATURE_SINGLE_TYPE
+        signature = self.TX.generate_signature(self.PRIVATE_KEY)
+        self.TX.sign(signature=signature)
+
+        self.assertEqual(self.TX.signed_tx, self.SIGNED_TX)
+
     def test_from_raw(self):
         tx = MinterTx.from_raw(raw_tx=self.SIGNED_TX)
 
@@ -228,6 +256,13 @@ class TestMinterRedeemCheckTx(unittest.TestCase):
         Sign transaction and check signed transaction
         """
         self.TX.sign(self.PRIVATE_KEY)
+
+        self.assertEqual(self.TX.signed_tx, self.SIGNED_TX)
+
+    def test_sign_with_signature(self):
+        self.TX.signature_type = MinterTx.SIGNATURE_SINGLE_TYPE
+        signature = self.TX.generate_signature(self.PRIVATE_KEY)
+        self.TX.sign(signature=signature)
 
         self.assertEqual(self.TX.signed_tx, self.SIGNED_TX)
 
@@ -268,6 +303,13 @@ class TestMinterSellAllCoinTx(unittest.TestCase):
 
         self.assertEqual(self.TX.signed_tx, self.SIGNED_TX)
 
+    def test_sign_with_signature(self):
+        self.TX.signature_type = MinterTx.SIGNATURE_SINGLE_TYPE
+        signature = self.TX.generate_signature(self.PRIVATE_KEY)
+        self.TX.sign(signature=signature)
+
+        self.assertEqual(self.TX.signed_tx, self.SIGNED_TX)
+
     def test_from_raw(self):
         tx = MinterTx.from_raw(raw_tx=self.SIGNED_TX)
 
@@ -305,6 +347,13 @@ class TestMinterSellCoinTx(unittest.TestCase):
         Sign transaction and check signed transaction
         """
         self.TX.sign(self.PRIVATE_KEY)
+
+        self.assertEqual(self.TX.signed_tx, self.SIGNED_TX)
+
+    def test_sign_with_signature(self):
+        self.TX.signature_type = MinterTx.SIGNATURE_SINGLE_TYPE
+        signature = self.TX.generate_signature(self.PRIVATE_KEY)
+        self.TX.sign(signature=signature)
 
         self.assertEqual(self.TX.signed_tx, self.SIGNED_TX)
 
@@ -349,6 +398,13 @@ class TestMinterSendTx(unittest.TestCase):
 
         self.assertEqual(self.TX.signed_tx, self.SIGNED_TX)
 
+    def test_sign_with_signature(self):
+        self.TX.signature_type = MinterTx.SIGNATURE_SINGLE_TYPE
+        signature = self.TX.generate_signature(self.PRIVATE_KEY)
+        self.TX.sign(signature=signature)
+
+        self.assertEqual(self.TX.signed_tx, self.SIGNED_TX)
+
     def test_from_raw(self):
         tx = MinterTx.from_raw(self.SIGNED_TX)
 
@@ -385,6 +441,13 @@ class TestMinterSetCandidateOffTx(unittest.TestCase):
 
         self.assertEqual(self.TX.signed_tx, self.SIGNED_TX)
 
+    def test_sign_with_signature(self):
+        self.TX.signature_type = MinterTx.SIGNATURE_SINGLE_TYPE
+        signature = self.TX.generate_signature(self.PRIVATE_KEY)
+        self.TX.sign(signature=signature)
+
+        self.assertEqual(self.TX.signed_tx, self.SIGNED_TX)
+
     def test_from_raw(self):
         tx = MinterTx.from_raw(raw_tx=self.SIGNED_TX)
 
@@ -415,6 +478,13 @@ class TestMinterSetCandidateOnTx(unittest.TestCase):
         Sign transaction and check signed transaction
         """
         self.TX.sign(self.PRIVATE_KEY)
+
+        self.assertEqual(self.TX.signed_tx, self.SIGNED_TX)
+
+    def test_sign_with_signature(self):
+        self.TX.signature_type = MinterTx.SIGNATURE_SINGLE_TYPE
+        signature = self.TX.generate_signature(self.PRIVATE_KEY)
+        self.TX.sign(signature=signature)
 
         self.assertEqual(self.TX.signed_tx, self.SIGNED_TX)
 
@@ -453,6 +523,13 @@ class TestMinterUnbondTx(unittest.TestCase):
 
         self.assertEqual(self.TX.signed_tx, self.SIGNED_TX)
 
+    def test_sign_with_signature(self):
+        self.TX.signature_type = MinterTx.SIGNATURE_SINGLE_TYPE
+        signature = self.TX.generate_signature(self.PRIVATE_KEY)
+        self.TX.sign(signature=signature)
+
+        self.assertEqual(self.TX.signed_tx, self.SIGNED_TX)
+
     def test_from_raw(self):
         tx = MinterTx.from_raw(raw_tx=self.SIGNED_TX)
 
@@ -488,6 +565,13 @@ class TestMinterEditCandidateTx(unittest.TestCase):
         Sign transaction and check signed transaction
         """
         self.TX.sign(self.PRIVATE_KEY)
+
+        self.assertEqual(self.TX.signed_tx, self.SIGNED_TX)
+
+    def test_sign_with_signature(self):
+        self.TX.signature_type = MinterTx.SIGNATURE_SINGLE_TYPE
+        signature = self.TX.generate_signature(self.PRIVATE_KEY)
+        self.TX.sign(signature=signature)
 
         self.assertEqual(self.TX.signed_tx, self.SIGNED_TX)
 
@@ -543,6 +627,13 @@ class TestMinterMultiSendCoinTx(unittest.TestCase):
         tx = MinterTx.from_raw(raw_tx=self.SIGNED_TX)
 
         self.assertEqual(tx.from_mx, self.FROM)
+
+    def test_sign_with_signature(self):
+        self.TX.signature_type = MinterTx.SIGNATURE_SINGLE_TYPE
+        signature = self.TX.generate_signature(self.PRIVATE_KEY)
+        self.TX.sign(signature=signature)
+
+        self.assertEqual(self.TX.signed_tx, self.SIGNED_TX)
 
 
 class TestTxFees(unittest.TestCase):
@@ -642,6 +733,37 @@ class TestMinterSendMultisigTx(unittest.TestCase):
         # Add signature by 3rd private key
         self.TX = MinterTx.add_signature(self.TX.signed_tx, self.PRIVATE_KEYS[2])
 
+        self.assertEqual(self.TX.signed_tx, self.SIGNED_TX)
+
+    def test_sign_with_signature(self):
+        # Set signature type for transaction
+        self.TX.signature_type = MinterTx.SIGNATURE_MULTI_TYPE
+
+        # Generate signatures
+        signatures = []
+        for pk in self.PRIVATE_KEYS:
+            signature = self.TX.generate_signature(private_key=pk)
+            signatures.append(signature)
+
+        # Sign transaction with signatures
+        self.TX.sign(signature=signatures, ms_address=self.FROM)
+
+        self.assertEqual(self.TX.signed_tx, self.SIGNED_TX)
+
+    def test_sign_with_pk_and_signature(self):
+        # Set signature type for transaction
+        self.TX.signature_type = MinterTx.SIGNATURE_MULTI_TYPE
+
+        # Generate 1 signature
+        signatures = []
+        for pk in self.PRIVATE_KEYS:
+            signatures.append(self.TX.generate_signature(private_key=pk))
+
+        # Sign transaction with pks and signature
+        self.TX.sign(private_key=self.PRIVATE_KEYS[:2], signature=signatures[2], ms_address=self.FROM)
+        self.assertEqual(self.TX.signed_tx, self.SIGNED_TX)
+
+        self.TX.sign(private_key=self.PRIVATE_KEYS[0], signature=signatures[1:], ms_address=self.FROM)
         self.assertEqual(self.TX.signed_tx, self.SIGNED_TX)
 
 
