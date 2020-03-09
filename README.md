@@ -92,12 +92,99 @@ E.g. `api = MinterAPI(api_url=node_url, timeout(1, 3), **kwargs)`
 
 You can create transaction by import transaction class and create object of this class.
 
-### Create tx
+## Create transactions
+Each Minter transaction requires `nonce, gas_coin` to be passed.  Also you can pass `payload, chain_id, gas_price`.
 
-```python
-from mintersdk.sdk.transactions import MinterDelegateTx
-tx = MinterDelegateTx(pub_key='Mp...', coin='MNT', stake=1, nonce=1, gas_coin='MNT')
-```
+`MiterTx(nonce, gas_coin, payload='', service_data='', chain_id=1, gas_price=1, **kwargs)`
+
+To create Minter transaction you should use concrete transaction class.
+
+All transaction values should be passed in BIP, you shouldn't convert them to PIP.
+
+### Transactions
+- MinterBuyCoinTx
+  ```python
+  from mintersdk.sdk.transactions import MinterBuyCoinTx
+  tx = MinterBuyCoinTx(coin_to_buy='SYMBOL', value_to_buy=1, coin_to_sell='SYMBOL', max_value_to_sell=2, nonce=1, gas_coin='SYMBOL')
+  ```
+  
+- MinterCreateCoinTx
+  ```python
+  from mintersdk.sdk.transactions import MinterCreateCoinTx
+  tx = MinterCreateCoinTx(name='Coin description', symbol='SYMBOL', initial_amount=1.5, initial_reserve=10000, crr=50, nonce=1, gas_coin='SYMBOL')
+  ```
+  
+- MinterDeclareCandidacyTx
+  ```python
+  from mintersdk.sdk.transactions import MinterDeclareCandidacyTx
+  tx = MinterDeclareCandidacyTx(address='Mx...', pub_key='Mp...', commission=1, coin='SYMBOL', stake=100, nonce=1, gas_coin='SYMBOL')
+  ```
+  
+- MinterDelegateTx
+  ```python
+  from mintersdk.sdk.transactions import MinterDelegateTx
+  tx = MinterDelegateTx(pub_key='Mp...', coin='SYMBOL', stake=100, nonce=1, gas_coin='SYMBOL')
+  ```
+  
+- MinterRedeemCheckTx
+  ```python
+  from mintersdk.sdk.transactions import MinterRedeemCheckTx
+  tx = MinterRedeemCheckTx(check='check hash str', proof='proof hash str', nonce=1, gas_coin='SYMBOL')
+  ```
+  
+- MinterSellAllCoinTx
+  ```python
+  from mintersdk.sdk.transactions import MinterSellAllCoinTx
+  tx = MinterSellAllCoinTx(coin_to_sell='SYMBOL', coin_to_buy='SYMBOL', min_value_to_buy=100, nonce=1, gas_coin='SYMBOL')
+  ```
+  
+- MinterSellCoinTx
+  ```python
+  from mintersdk.sdk.transactions import MinterSellCoinTx
+  tx = MinterSellCoinTx(coin_to_sell='SYMBOL', value_to_sell=1, coin_to_buy='SYMBOL', min_value_to_buy=2, nonce=1, gas_coin='SYMBOL')
+  ```
+  
+- MinterSendCoinTx
+  ```python
+  from mintersdk.sdk.transactions import MinterSendCoinTx
+  tx = MinterSendCoinTx(coin='SYMBOL', to='Mx...', value=5, nonce=1, gas_coin='SYMBOL')
+  ```
+  
+- MinterMultiSendCoinTx
+  ```python
+  from mintersdk.sdk.transactions import MinterMultiSendCoinTx
+  
+  txs = [
+      {'coin': 'SYMBOL', 'to': 'Mx..1', 'value': 5},
+      {'coin': 'SYMBOL', 'to': 'Mx..2', 'value': 1},
+      {'coin': 'SYMBOL', 'to': 'Mx..3', 'value': 4}
+  ]
+  tx = MinterMultiSendCoinTx(txs=txs, nonce=1, gas_coin='SYMBOL')
+  ```
+  
+- MinterSetCandidateOffTx
+  ```python
+  from mintersdk.sdk.transactions import MinterSetCandidateOffTx
+  tx = MinterSetCandidateOffTx(pub_key='Mp...', nonce=1, gas_coin='SYMBOL')
+  ```
+  
+- MinterSetCandidateOnTx
+  ```python
+  from mintersdk.sdk.transactions import MinterSetCandidateOnTx
+  tx = MinterSetCandidateOnTx(pub_key='Mp...', nonce=1, gas_coin='SYMBOL')
+  ```
+  
+- MinterUnbondTx
+  ```python
+  from mintersdk.sdk.transactions import MinterUnbondTx
+  tx = MinterUnbondTx(pub_key='Mp...', coin='SYMBOL', value=100, nonce=1, gas_coin='SYMBOL')
+  ```
+  
+- MinterEditCandidateTx
+  ```python
+  from mintersdk.sdk.transactions import MinterEditCandidateTx
+  tx = MinterEditCandidateTx(pub_key='Mp...', reward_address='Mx...', owner_address='Mx...', nonce=1, gas_coin='SYMBOL')
+  ```
 
 ### Sign tx
 
