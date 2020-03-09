@@ -14,11 +14,81 @@ You can support our project by sending any Minter's coins to our wallet Mx6e0cd6
 Feel free to delegate to our 3% masternode Mp02bc3c3f77d5ab9732ef9fc3801a6d72dc18f88328c14dc735648abfe551f50f
 
 
-## Installation
+# Installation
 `pip install minter-sdk`
 
 
-## SDK use
+# Using API
+```python
+from mintersdk.minterapi import MinterAPI
+
+node_url = 'https://minter-node-1.testnet.minter.network:8841'  # Example of a node url
+api = MinterAPI(api_url=node_url, **kwargs)
+```
+You can pass `requests` package attributes as `**kwargs`
+E.g. `api = MinterAPI(api_url=node_url, timeout(1, 3), **kwargs)`
+
+### Methods
+- `api.get_status()`  
+  Returns node status info.
+  
+- `get_candidate(public_key, height=None)`  
+  Returns candidate’s info by provided public_key. It will respond with 404 code if candidate is not found.
+  
+- `get_validators(height=None)`  
+  Returns list of active validators.
+  
+- `get_balance(address, height=None)`  
+  Returns coins list, balance and transaction count (for nonce) of an address.
+  
+- `get_nonce(address)`  
+  Returns next transaction number (nonce) of an address.
+  
+- `send_transaction(tx)`  
+  Returns the result of sending signed tx.
+  
+- `get_transaction(tx_hash)`  
+  Returns transaction info.
+  
+- `get_block(height)`
+  Returns block data at given height.
+  
+- `get_events(height)`  
+  Returns events at given height.
+  
+- `get_candidates(height=None, include_stakes=False)`  
+  Returns list of candidates.
+  
+- `get_coin_info(symbol, height=None)`  
+  Returns information about coin. Note: this method does not return information about base coins (MNT and BIP).
+  
+- `estimate_coin_sell(coin_to_sell, value_to_sell, coin_to_buy, height=None)`  
+  Return estimate of sell coin transaction.
+  
+- `estimate_coin_buy(coin_to_sell, value_to_buy, coin_to_buy, height=None)`  
+  Return estimate of buy coin transaction.
+  
+- `estimate_tx_comission(tx)`  
+  Return estimate of transaction.
+  
+- `get_transactions(query, page=None, limit=None)`  
+  Return transactions by query.
+  
+- `get_unconfirmed_transactions(limit=None)`  
+  Returns unconfirmed transactions.
+  
+- `get_max_gas_price(height=None)`  
+  Returns current max gas price.
+  
+- `get_min_gas_price()`  
+  Returns current min gas price.
+  
+- `get_missed_blocks(public_key, height=None)`  
+  Returns missed blocks by validator public key.
+
+
+
+# SDK use
 
 You can create transaction by import transaction class and create object of this class.
 
