@@ -18,6 +18,7 @@ Feel free to delegate to our 3% masternode Mp02bc3c3f77d5ab9732ef9fc3801a6d72dc1
 `pip install minter-sdk`
 
 
+
 # Using API
 ```python
 from mintersdk.minterapi import MinterAPI
@@ -85,6 +86,7 @@ E.g. `api = MinterAPI(api_url=node_url, timeout(1, 3), **kwargs)`
   
 - `get_missed_blocks(public_key, height=None)`  
   Returns missed blocks by validator public key.
+
 
 
 # SDK use
@@ -182,6 +184,7 @@ All transaction values should be passed in BIP, you shouldn't convert them to PI
   tx = MinterEditCandidateTx(pub_key='Mp...', reward_address='Mx...', owner_address='Mx...', nonce=1, gas_coin='SYMBOL')
   ```
 
+
 ## Sign transaction
 When your transaction object is created, you can sign it.
 Every transaction can be signed by private key or/and by signature.  
@@ -226,11 +229,37 @@ Keep in mind, we have some `tx = MinterSomeTx(...)` and API `api = MinterAPI(...
   ```
   
 As you see above, to generate signature we must set transaction `signature_type` before generating signature.  
+
 You can set this argument while creating transaction.  
 `tx = MinterSomeTx(..., signature_type=MinterTx.SIGNATURE_MULTI_TYPE)`  
 `tx = MinterSomeTx(..., signature_type=MinterTx.SIGNATURE_SINGLE_TYPE)`  
-After that you can simply generate signature  
+
+After that you can simply generate signature without setting it's signature type by overriding attribute.   
 `signature = tx.generate_signature(private_key='PRIVATE_KEY')`
+
+### Adding signature to multi signature type transaction
+When multi signature transaction is created it can be partially signed, e.g. signed by 2 of 3 private keys.  
+Then partially signed transaction can be transferred to another client and this client can add own signature to transaction.  
+```python
+from mintersdk.sdk.transactions import MinterTx
+
+# Client 1
+# Create transaction
+tx = MinterSomeTx(...)
+
+# Sign transaction
+tx.sign(private_key=['PK_1', 'PK_2'], ms_address='Mx...')
+
+# Then tx.signed_tx is transferred to Client 2
+
+
+# Client 2
+# Received raw_tx (tx.signed_tx from Client 1)
+tx = MinterTx.add_signature(signed_tx=raw_tx, private_key='PK_3')
+```  
+Client 2 will get new tx object with client's 2 signature.  
+Client 2 may pass `tx.signed_tx` to next client or just send `tx.signed_tx` to the network.
+
 
 ## Send transaction
 When transaction is created and signed, you can send transaction to network. Signed transaction for sending can be found in `tx.signed_tx` attribute.  
@@ -245,6 +274,8 @@ tx.sign(...)
 response = api.send_transaction(tx=tx.signed_tx)
 ```
 
+
+
 # Create transaction from raw
 You can create transaction object from raw transaction hash. You will get tx object of tx type.
 
@@ -253,6 +284,8 @@ from mintersdk.sdk.transactions import MinterTx
 
 tx = MinterTx.from_raw(raw_tx='...')
 ```
+
+
 
 # Minter deeplink
 Let's create a MinterSendCoinTx
