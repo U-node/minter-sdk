@@ -25,7 +25,7 @@ from mintersdk.minterapi import MinterAPI
 node_url = 'https://minter-node-1.testnet.minter.network:8841'  # Example of a node url
 api = MinterAPI(api_url=node_url, **kwargs)
 ```
-You can pass `requests` package attributes as `**kwargs`
+You can pass `requests` package attributes as `**kwargs`  
 E.g. `api = MinterAPI(api_url=node_url, timeout(1, 3), **kwargs)`
 
 ### Methods
