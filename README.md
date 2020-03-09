@@ -87,17 +87,13 @@ E.g. `api = MinterAPI(api_url=node_url, timeout(1, 3), **kwargs)`
   Returns missed blocks by validator public key.
 
 
-
 # SDK use
-
-You can create transaction by import transaction class and create object of this class.
-
 ## Create transactions
 Each Minter transaction requires `nonce, gas_coin` to be passed.  Also you can pass `payload, chain_id, gas_price`.
 
 `MiterTx(nonce, gas_coin, payload='', service_data='', chain_id=1, gas_price=1, **kwargs)`
 
-To create Minter transaction you should use concrete transaction class.
+**To create Minter transaction you MUST use concrete transaction class.**
 
 All transaction values should be passed in BIP, you shouldn't convert them to PIP.
 
@@ -186,35 +182,83 @@ All transaction values should be passed in BIP, you shouldn't convert them to PI
   tx = MinterEditCandidateTx(pub_key='Mp...', reward_address='Mx...', owner_address='Mx...', nonce=1, gas_coin='SYMBOL')
   ```
 
-### Sign tx
+## Sign transaction
+When your transaction object is created, you can sign it.
+Every transaction can be signed by private key or/and by signature.  
+Keep in mind, we have some `tx = MinterSomeTx(...)` and API `api = MinterAPI(...)`
 
-``
-tx.sign('PRIVATE_KEY')
-``
+- Sign single signature type transaction
+  ```python
+  # Sign with private key
+  tx.sign(private_key='PRIVATE_KEY')
+  
+  # Sign with signature
+  tx.signature_type = tx.SIGNATURE_SINGLE_TYPE
+  
+  signature = tx.generate_signature(private_key='PRIVATE_KEY')
+  
+  tx.sign(signature=signature)
+  ```
+  
+- Sign multi signature type transaction
+  ```python
+  # Sign with private keys
+  tx.sign(private_key=['PRIVATE_KEY_1', 'PRIVATE_KEY_2', ...], ms_address='Multisig address Mx...')
+  
+  # Sign with signatures
+  tx.signature_type = tx.SIGNATURE_MULTI_TYPE
+  
+  signature_1 = tx.generate_signature(private_key='PRIVATE_KEY_1')
+  signature_2 = tx.generate_signature(private_key='PRIVATE_KEY_2')
+  
+  tx.sign(signature=[signature_1, signature_2], ms_address='Multisig address Mx...')
+  
+  # Sign with both private keys and signatures
+  tx.signature_type = tx.SIGNATURE_MULTI_TYPE
+  
+  private_key_1 = 'PRIVATE_KEY_1'
+  private_key_2 = 'PRIVATE_KEY_2'
 
-### You can get signed_tx from signed_tx attribute
+  signature_1 = tx.generate_signature(private_key='PRIVATE_KEY_3')
+  signature_2 = tx.generate_signature(private_key='PRIVATE_KEY_4')
+  
+  tx.sign(private_key=[private_key_1, private_key_2], signature=[signature_1, signature_2], ms_address='Multisig address Mx...'))
+  ```
+  
+As you see above, to generate signature we must set transaction `signature_type` before generating signature.  
+You can set this argument while creating transaction.  
+`tx = MinterSomeTx(..., signature_type=MinterTx.SIGNATURE_MULTI_TYPE)`  
+`tx = MinterSomeTx(..., signature_type=MinterTx.SIGNATURE_SINGLE_TYPE)`  
+After that you can simply generate signature  
+`signature = tx.generate_signature(private_key='PRIVATE_KEY')`
 
-``
-tx.signed_tx
-``
+## Send transaction
+When transaction is created and signed, you can send transaction to network. Signed transaction for sending can be found in `tx.signed_tx` attribute.  
+```python
+# Create transaction
+tx = MinterSomeTx(...)
 
-To get all required and optional arguments, look for source code.
+# Sign transaction
+tx.sign(...)
 
-### To create tx object from raw tx
+# Send transaction
+response = api.send_transaction(tx=tx.signed_tx)
+```
+
+# Create transaction from raw
+You can create transaction object from raw transaction hash. You will get tx object of tx type.
 
 ```python
 from mintersdk.sdk.transactions import MinterTx
+
 tx = MinterTx.from_raw(raw_tx='...')
 ```
-You will get tx object of tx type.
 
-
-### Minter deeplink
+# Minter deeplink
 Let's create a MinterSendCoinTx
 ```
 from mintersdk.sdk.transactions import MinterSendCoinTx
-tx = MinterSendCoinTx(coin='BIP', to='Mx18467bbb64a8edf890201d526c35957d82be3d95', value=1.23456789, nonce=1,
-                      gas_coin='MNT', gas_price=1, payload='Hello World')
+tx = MinterSendCoinTx(coin='BIP', to='Mx18467bbb64a8edf890201d526c35957d82be3d95', value=1.23456789, nonce=1, gas_coin='MNT', gas_price=1, payload='Hello World')
 ```
 
 Now it's time to create deeplink
