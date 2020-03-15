@@ -109,7 +109,7 @@ All transaction values should be passed in BIP, you shouldn't convert them to PI
 - MinterCreateCoinTx
   ```python
   from mintersdk.sdk.transactions import MinterCreateCoinTx
-  tx = MinterCreateCoinTx(name='Coin description', symbol='SYMBOL', initial_amount=1.5, initial_reserve=10000, crr=50, nonce=1, gas_coin='SYMBOL')
+  tx = MinterCreateCoinTx(name='Coin description', symbol='SYMBOL', initial_amount=1.5, initial_reserve=10000, crr=50, max_supply=1000, nonce=1, gas_coin='SYMBOL')
   ```
   
 - MinterDeclareCandidacyTx
@@ -325,4 +325,42 @@ from mintersdk import MinterHelper
 qr_code_filepath = MinterHelper.generate_qr(text=url_link)
 
 # For additional params information for `MinterHelper.generate_qr()`, please see sourcecode for this method.
+```
+
+
+
+# Minter check
+## Create and sign check
+```python
+from mintersdk.sdk.check import MinterCheck
+
+# Create check without password
+check = MinterCheck(nonce=1, due_block=300000, coin='MNT', value=1, gas_coin='MNT')
+
+# Or create check with password
+check = MinterCheck(nonce=1, due_block=300000, coin='MNT', value=1, gas_coin='MNT', passphrase='pass')
+
+# Sign check
+signed_check = check.sign(private_key='PRIVATE_KEY')
+```
+
+
+## Create proof
+```python
+from mintersdk.sdk.check import MinterCheck
+
+proof = MinterCheck.proof(address='Mx...', passphrase='pass')
+```
+
+
+## Create check object from raw
+```python
+from mintersdk.sdk.check import MinterCheck
+
+# Create and sign check
+check = MinterCheck(nonce=1, due_block=300000, coin='MNT', value=1, gas_coin='MNT')
+signed_check = check.sign(private_key='PRIVATE_KEY')
+
+# Create object from signed check
+check = MinterCheck.from_raw(rawcheck=signed_check)
 ```

@@ -12,14 +12,14 @@ class MinterCheck(object):
     Create new check or decode existing
     """
 
-    def __init__(self, nonce, due_block, coin, value, passphrase=None,
-                 chain_id=1, **kwargs):
+    def __init__(self, nonce, due_block, coin, value, gas_coin, passphrase=None, chain_id=1, **kwargs):
         """
         Args:
             nonce (int)
             due_block (int)
             coin (str)
             value (float)
+            gas_coin (str): Gas coin symbol
             passphrase (str)
             chain_id (int)
         """
@@ -28,6 +28,7 @@ class MinterCheck(object):
         self.due_block = due_block
         self.coin = coin
         self.value = value
+        self.gas_coin = gas_coin
         self.passphrase = passphrase
         self.chain_id = chain_id
 
@@ -73,14 +74,15 @@ class MinterCheck(object):
             raise ValueError('Passphrase should be not empty string')
 
         # Prepare structure
-        # It contains nonce, chain_id, due_block, coin, value, lock, v, r, s
+        # It contains nonce, chain_id, due_block, coin, value, gas_coin, lock, v, r, s
         # lock, v, r, s appended later in code
         structure = [
             int(binascii.hexlify(str(self.nonce).encode()), 16),
             self.chain_id,
             self.due_block,
             MinterConvertor.encode_coin_name(self.coin),
-            MinterConvertor.convert_value(value=self.value, to='pip')
+            MinterConvertor.convert_value(value=self.value, to='pip'),
+            MinterConvertor.encode_coin_name(self.gas_coin)
         ]
 
         # Create msg hash
@@ -171,11 +173,12 @@ class MinterCheck(object):
                 value=MinterHelper.bin2int(decoded[4]),
                 to='bip'
             ),
-            'lock': binascii.hexlify(decoded[5]).decode(),
+            'gas_coin': MinterConvertor.decode_coin_name(decoded[5]),
+            'lock': binascii.hexlify(decoded[6]).decode(),
             'signature': {
-                'v': MinterHelper.bin2int(decoded[6]),
-                'r': MinterHelper.bin2hex(decoded[7]),
-                's': MinterHelper.bin2hex(decoded[8])
+                'v': MinterHelper.bin2int(decoded[7]),
+                'r': MinterHelper.bin2hex(decoded[8]),
+                's': MinterHelper.bin2hex(decoded[9])
             }
         }
         check = MinterCheck(**kwargs)
@@ -187,6 +190,7 @@ class MinterCheck(object):
             check.due_block,
             MinterConvertor.encode_coin_name(check.coin),
             MinterConvertor.convert_value(value=check.value, to='pip'),
+            MinterConvertor.encode_coin_name(cnnheck.gas_coin),
             MinterHelper.hex2bin(check.lock)
         ])
         public_key = ECDSA.recover(msg_hash, list(check.signature.values()))

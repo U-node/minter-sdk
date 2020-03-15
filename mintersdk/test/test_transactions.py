@@ -91,7 +91,7 @@ class TestMinterCreateCoinTx(unittest.TestCase):
     def setUp(self):
         self.FROM = 'Mx31e61a05adbd13c6b625262704bc305bf7725026'
         self.PRIVATE_KEY = '07bc17abdcee8b971bb8723e36fe9d2523306d5ab2d683631693238e0f9df142'
-        self.SIGNED_TX = 'f8850102018a4d4e540000000000000005abea8a535550455220544553548a5350525445535400000089056bc75e2d63100000888ac7230489e800000a808001b845f8431ca0a0b58787e19d8ef3cbd887936617af5cf069a25a568f838c3d04daf5ad2f6f8ea07660c13ab5017edb87f5b52be4574c8a33a893bac178adec9c262a1408e4f1fe'
+        self.SIGNED_TX = 'f88f0102018a4d4e540000000000000005b5f48a535550455220544553548a5350525445535400000089056bc75e2d63100000888ac7230489e800000a893635c9adc5dea00000808001b845f8431ca0ccfabd9283d27cf7978bca378e0cc7dc69a39ff3bdc56707fa2d552655f9290da0226057221cbaef35696c9315cd29e783d3c66d842d0a3948a922abb42ca0dabe'
         self.TX = MinterCreateCoinTx(**{
             'nonce': 1,
             'chain_id': MinterTx.TESTNET_CHAIN_ID,
@@ -100,7 +100,8 @@ class TestMinterCreateCoinTx(unittest.TestCase):
             'symbol': 'SPRTEST',
             'initial_amount': 100,
             'initial_reserve': 10,
-            'crr': 10
+            'crr': 10,
+            'max_supply': 1000
         })
 
     def test_valid_tx(self):
@@ -134,6 +135,7 @@ class TestMinterCreateCoinTx(unittest.TestCase):
         self.assertEqual(tx.initial_amount, self.TX.initial_amount)
         self.assertEqual(tx.initial_reserve, self.TX.initial_reserve)
         self.assertEqual(tx.crr, self.TX.crr)
+        self.assertEqual(tx.max_supply, self.TX.max_supply)
 
 
 class TestMinterDeclareCandidacyTx(unittest.TestCase):

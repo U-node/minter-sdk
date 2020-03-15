@@ -554,7 +554,7 @@ class MinterCreateCoinTx(MinterTx):
     # Fee units
     COMMISSION = 1000
 
-    def __init__(self, name, symbol, initial_amount, initial_reserve, crr, **kwargs):
+    def __init__(self, name, symbol, initial_amount, initial_reserve, crr, max_supply, **kwargs):
         """
         Args:
             name (str): coin name
@@ -571,6 +571,7 @@ class MinterCreateCoinTx(MinterTx):
         self.initial_amount = initial_amount
         self.initial_reserve = initial_reserve
         self.crr = crr
+        self.max_supply = max_supply
 
     def _structure_from_instance(self):
         """ Override parent method. """
@@ -584,7 +585,8 @@ class MinterCreateCoinTx(MinterTx):
                 'symbol': MinterConvertor.encode_coin_name(self.symbol),
                 'initial_amount': MinterConvertor.convert_value(value=self.initial_amount, to='pip'),
                 'initial_reserve': MinterConvertor.convert_value(value=self.initial_reserve, to='pip'),
-                'crr': '' if self.crr == 0 else self.crr
+                'crr': '' if self.crr == 0 else self.crr,
+                'max_supply': MinterConvertor.convert_value(value=self.max_supply, to='pip')
             }
         })
 
@@ -609,7 +611,11 @@ class MinterCreateCoinTx(MinterTx):
                 value=MinterHelper.bin2int(kwargs['data']['initial_reserve']),
                 to='bip'
             ),
-            'crr': MinterHelper.bin2int(kwargs['data']['crr'])
+            'crr': MinterHelper.bin2int(kwargs['data']['crr']),
+            'max_supply': MinterConvertor.convert_value(
+                value=MinterHelper.bin2int(kwargs['data']['max_supply']),
+                to='bip'
+            )
         })
 
         # Populate data key values as kwargs
@@ -625,7 +631,8 @@ class MinterCreateCoinTx(MinterTx):
             'symbol': raw_data[1],
             'initial_amount': raw_data[2],
             'initial_reserve': raw_data[3],
-            'crr': raw_data[4]
+            'crr': raw_data[4],
+            'max_supply': raw_data[5]
         }
 
 
