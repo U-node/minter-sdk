@@ -376,3 +376,32 @@ signed_check = check.sign(private_key='PRIVATE_KEY')
 # Create object from signed check
 check = MinterCheck.from_raw(rawcheck=signed_check)
 ```
+
+
+
+# Minter Wallet
+```python
+from mintersdk.sdk.wallet import MinterWallet
+
+# Create new wallet
+wallet = MinterWallet.create()
+
+# Get wallet data from existing mnemonic
+wallet = MinterWallet.create(mnemonic='YOUR MNEMONIC PHRASE')
+```
+
+
+
+# Helpers
+## Convert between PIP and BIP
+```python
+from mintersdk import MinterConvertor
+
+# Get BIP from PIP
+pip_value = 1000000000000000000
+bip_value = MinterConvertor.convert_value(value=pip_value, to='bip')
+
+# Get PIP from BIP
+bip_value = 100
+pip_value = MinterConvertor.convert_value(value=bip_value, to='pip')
+```

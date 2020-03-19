@@ -1,8 +1,8 @@
-'''
-Created on 31 окт. 2018 г.
+"""
+Created on 31.10.2018
 
 @author: Roman
-'''
+"""
 import binascii
 import hmac
 import hashlib
@@ -29,8 +29,10 @@ class MinterWallet(object):
     def create(cls, mnemonic=None):
         """
         Create Minter wallet
-            @param mnemonic|string: Mnemonic phrase
-            @return: dict
+        Args:
+            mnemonic (str): Mnemonic phrase
+        Returns:
+            dict
         """
 
         # Create mnemonic phrase if None
@@ -77,8 +79,10 @@ class MinterWallet(object):
     def get_public_from_private(cls, private_key):
         """
         Get public key from private key
-            @param private_key|bytes: hex bytes of private key
-            @return: string
+        Args:
+            private_key (bytes): hex bytes of private key
+        Returns:
+            str
         """
 
         public_key = bitcoin_curve.public_key(
@@ -93,10 +97,11 @@ class MinterWallet(object):
     @classmethod
     def get_address_from_public_key(cls, public_key):
         """
-        @param public_key|string
-        @return: string - Wallet address with prefix
+        Args:
+            public_key (str)
+        Returns:
+            str
         """
-
         # Create keccak hash
         _keccak = MinterHelper.keccak_hash(
             binascii.unhexlify(
