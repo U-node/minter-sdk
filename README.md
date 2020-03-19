@@ -30,32 +30,17 @@ You can pass `requests` package attributes as `**kwargs`
 E.g. `api = MinterAPI(api_url=node_url, timeout(1, 3), **kwargs)`
 
 ## Methods
-- `get_status()`  
-  Returns node status info.
-  
-- `get_candidate(public_key, height=None)`  
-  Returns candidate’s info by provided public_key. It will respond with 404 code if candidate is not found.
-  
-- `get_validators(height=None)`  
-  Returns list of active validators.
+- `get_addresses(addresses, height=None)`  
+  Returns addresses balances.
   
 - `get_balance(address, height=None)`  
   Returns coins list, balance and transaction count (for nonce) of an address.
-  
-- `get_nonce(address)`  
-  Returns next transaction number (nonce) of an address.
-  
-- `send_transaction(tx)`  
-  Returns the result of sending signed tx.
-  
-- `get_transaction(tx_hash)`  
-  Returns transaction info.
-  
+
 - `get_block(height)`
   Returns block data at given height.
   
-- `get_events(height)`  
-  Returns events at given height.
+- `get_candidate(public_key, height=None)`  
+  Returns candidate’s info by provided public_key. It will respond with 404 code if candidate is not found.
   
 - `get_candidates(height=None, include_stakes=False)`  
   Returns list of candidates.
@@ -63,20 +48,11 @@ E.g. `api = MinterAPI(api_url=node_url, timeout(1, 3), **kwargs)`
 - `get_coin_info(symbol, height=None)`  
   Returns information about coin. Note: this method does not return information about base coins (MNT and BIP).
   
-- `estimate_coin_sell(coin_to_sell, value_to_sell, coin_to_buy, height=None)`  
-  Return estimate of sell coin transaction.
+- `get_events(height)`  
+  Returns events at given height.
   
-- `estimate_coin_buy(coin_to_sell, value_to_buy, coin_to_buy, height=None)`  
-  Return estimate of buy coin transaction.
-  
-- `estimate_tx_comission(tx)`  
-  Return estimate of transaction.
-  
-- `get_transactions(query, page=None, limit=None)`  
-  Return transactions by query.
-  
-- `get_unconfirmed_transactions(limit=None)`  
-  Returns unconfirmed transactions.
+- `get_genesis()`  
+  Return network genesis.
   
 - `get_max_gas_price(height=None)`  
   Returns current max gas price.
@@ -86,6 +62,42 @@ E.g. `api = MinterAPI(api_url=node_url, timeout(1, 3), **kwargs)`
   
 - `get_missed_blocks(public_key, height=None)`  
   Returns missed blocks by validator public key.
+  
+- `get_network_info()`  
+  Return node network information.
+  
+- `get_nonce(address)`  
+  Returns next transaction number (nonce) of an address.
+  
+- `get_status()`  
+  Returns node status info.
+  
+- `get_transaction(tx_hash)`  
+  Returns transaction info.
+  
+- `get_transactions(query, page=None, limit=None)`  
+  Return transactions by query.
+  
+- `get_unconfirmed_transactions(limit=None)`  
+  Returns unconfirmed transactions.
+  
+- `get_validators(height=None, page=None, limit=None)`  
+  Returns list of active validators.
+  
+- `estimate_coin_buy(coin_to_sell, value_to_buy, coin_to_buy, height=None)`  
+  Return estimate of buy coin transaction.
+  
+- `estimate_coin_sell(coin_to_sell, value_to_sell, coin_to_buy, height=None)`  
+  Return estimate of sell coin transaction.
+  
+- `estimate_coin_sell_all(coin_to_sell, value_to_sell, coin_to_buy, height=None)`  
+  Return estimate of sell all coin transaction.
+  
+- `estimate_tx_commission(tx, height=None)`  
+  Return estimate of transaction.
+  
+- `send_transaction(tx)`  
+  Returns the result of sending signed tx.
 
 
 

@@ -1,9 +1,11 @@
-'''
-Created on 26 окт. 2018 г.
+"""
+Created on 26.10.2018
 
 @author: Roman
-'''
+"""
 import requests
+import json
+from deprecated import deprecated
 
 
 class MinterAPI(object):
@@ -43,7 +45,7 @@ class MinterAPI(object):
         if not hasattr(self, name):
             raise KeyError('Attribute {} is not available for this class'.format(name))
 
-        return super.__setattr__(self, name, value)
+        return super(MinterAPI, self).__setattr__(name, value)
 
     def get_status(self):
         """
@@ -53,21 +55,31 @@ class MinterAPI(object):
 
     def get_candidate(self, public_key, height=None):
         """
-        Get canditate
+        Get candidate
         Args:
             public_key (string): candidate public key
             height (int): block height
         """
-        return self._request('candidate',
-                             params={'pub_key': public_key, 'height': height})
+        return self._request('candidate', params={'pub_key': public_key, 'height': height})
 
-    def get_validators(self, height=None):
+    def get_validators(self, height=None, page=None, limit=None):
         """
         Get validators list
         Args:
             height (int): get validators on specified block height
+            page (int|None): page number
+            limit (int|None): items per page
         """
-        return self._request('validators', params={'height': height})
+        return self._request('validators', params={'height': height, 'page': page, 'perPage': limit})
+
+    def get_addresses(self, addresses, height=None):
+        """
+        Returns addresses balances
+        Args:
+            addresses (list[str]): Addresses list
+            height (int|None): Block height
+        """
+        return self._request('addresses', params={'addresses': json.dumps(addresses), 'height': height})
 
     def get_balance(self, address, height=None):
         """
@@ -76,8 +88,7 @@ class MinterAPI(object):
             address (string): wallet address
             height (int): block height
         """
-        return self._request('address',
-                             params={'address': address, 'height': height})
+        return self._request('address', params={'address': address, 'height': height})
 
     def get_nonce(self, address):
         """
@@ -103,7 +114,7 @@ class MinterAPI(object):
         """
         Get transaction info
         Args:
-            hash (string): transaction hash
+            tx_hash (string): transaction hash
         """
         tx_hash = '0x' + tx_hash
 
@@ -130,6 +141,7 @@ class MinterAPI(object):
         Get candidates
         Args:
             height (int): block height
+            include_stakes (bool)
         """
         return self._request(
             'candidates',
@@ -146,11 +158,9 @@ class MinterAPI(object):
             symbol (string): coin name
             height (int): block height
         """
-        return self._request('coin_info',
-                             params={'symbol': symbol, 'height': height})
+        return self._request('coin_info', params={'symbol': symbol, 'height': height})
 
-    def estimate_coin_sell(self, coin_to_sell, value_to_sell,
-                           coin_to_buy, height=None):
+    def estimate_coin_sell(self, coin_to_sell, value_to_sell, coin_to_buy, height=None):
         """
         Return estimate of sell coin transaction
         Args:
@@ -169,8 +179,26 @@ class MinterAPI(object):
             }
         )
 
-    def estimate_coin_buy(self, coin_to_sell, value_to_buy,
-                          coin_to_buy, height=None):
+    def estimate_coin_sell_all(self, coin_to_sell, value_to_sell, coin_to_buy, height=None):
+        """
+        Return estimate of sell all coin transaction.
+        Args:
+            coin_to_sell (string): coin name to sell
+            value_to_sell (string): amount of coins to sell
+            coin_to_buy (string): coin name to buy
+            height (int): block height
+        """
+        return self._request(
+            'estimate_coin_sell_all',
+            params={
+                'coin_to_sell': coin_to_sell,
+                'value_to_sell': value_to_sell,
+                'coin_to_buy': coin_to_buy,
+                'height': height
+            }
+        )
+
+    def estimate_coin_buy(self, coin_to_sell, value_to_buy, coin_to_buy, height=None):
         """
         Return estimate of buy coin transaction
         Args:
@@ -189,16 +217,30 @@ class MinterAPI(object):
             }
         )
 
-    def estimate_tx_comission(self, tx):
+    @deprecated("Please, use 'estimate_tx_commission' instead")
+    def estimate_tx_comission(self, tx, height=None):
         """
         Estimate current tx gas.
         Args:
             tx (string): signed transaction
+            height (int|None): block height
         """
         if tx[:2] != '0x':
             tx = '0x' + tx
 
-        return self._request('estimate_tx_commission', params={'tx': tx})
+        return self._request('estimate_tx_commission', params={'tx': tx, 'height': height})
+
+    def estimate_tx_commission(self, tx, height=None):
+        """
+        Estimate current tx gas.
+        Args:
+            tx (string): signed transaction
+            height (int|None): block height
+        """
+        if tx[:2] != '0x':
+            tx = '0x' + tx
+
+        return self._request('estimate_tx_commission', params={'tx': tx, 'height': height})
 
     def get_transactions(self, query, page=None, limit=None):
         """
@@ -244,6 +286,14 @@ class MinterAPI(object):
             params={'pub_key': public_key, 'height': height}
         )
 
+    def get_genesis(self):
+        """ Return network genesis. """
+        return self._request('genesis')
+
+    def get_network_info(self):
+        """ Return node network information. """
+        return self._request('net_info')
+
     def _request(self, command, request_type='get', **kwargs):
         """
         Send all requests to API
@@ -264,6 +314,8 @@ class MinterAPI(object):
                 response = requests.get(url, **kwargs)
             elif request_type == 'post':
                 response = requests.post(url, **kwargs)
+            else:
+                response = None
 
             # Try to get json response.
             try:
