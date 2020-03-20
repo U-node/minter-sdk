@@ -1,5 +1,9 @@
-import rlp
+"""
+@author: Roman Matusevich
+"""
 import binascii
+
+import rlp
 from mintersdk import MinterConvertor
 
 
@@ -44,8 +48,11 @@ class MinterDeeplink(object):
         """
 
         # Create deeplink structure
-        gas_coin = MinterConvertor.encode_coin_name(self.gas_coin) if self.gas_coin else ''
-        deep_structure = [self.__type, self.__data, self.payload, self.nonce, self.gas_price, gas_coin]
+        gas_coin = MinterConvertor.encode_coin_name(
+            self.gas_coin
+        ) if self.gas_coin else ''
+        deep_structure = [self.__type, self.__data, self.payload, self.nonce,
+                          self.gas_price, gas_coin]
 
         # Create deeplink hash (`d` URL param)
         deephash = rlp.encode(deep_structure)

@@ -1,11 +1,10 @@
 """
-Created on 31.10.2018
-
-@author: Roman
+@author: Roman Matusevich
 """
 import binascii
-import hmac
 import hashlib
+
+import hmac
 from mnemonic.mnemonic import Mnemonic
 from mintersdk.two1.bitcoin.crypto import HDKey, HDPrivateKey, bitcoin_curve
 from mintersdk import MinterHelper, MinterPrefix

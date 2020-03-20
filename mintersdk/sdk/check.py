@@ -1,6 +1,10 @@
-import rlp
+"""
+@author: Roman Matusevich
+"""
 import binascii
 import hashlib
+
+import rlp
 from mintersdk import MinterHelper, MinterConvertor, MinterPrefix
 from mintersdk.sdk import ECDSA
 from mintersdk.sdk.wallet import MinterWallet
@@ -12,7 +16,8 @@ class MinterCheck(object):
     Create new check or decode existing
     """
 
-    def __init__(self, nonce, due_block, coin, value, gas_coin, passphrase=None, chain_id=1, **kwargs):
+    def __init__(self, nonce, due_block, coin, value, gas_coin,
+                 passphrase=None, chain_id=1, **kwargs):
         """
         Args:
             nonce (int)
@@ -26,9 +31,9 @@ class MinterCheck(object):
 
         self.nonce = nonce
         self.due_block = due_block
-        self.coin = coin
+        self.coin = coin.upper()
         self.value = value
-        self.gas_coin = gas_coin
+        self.gas_coin = gas_coin.upper()
         self.passphrase = passphrase
         self.chain_id = chain_id
 
@@ -74,7 +79,8 @@ class MinterCheck(object):
             raise ValueError('Passphrase should be not empty string')
 
         # Prepare structure
-        # It contains nonce, chain_id, due_block, coin, value, gas_coin, lock, v, r, s
+        # It contains nonce, chain_id, due_block, coin, value, gas_coin,
+        # lock, v, r, s.
         # lock, v, r, s appended later in code
         structure = [
             int(binascii.hexlify(str(self.nonce).encode()), 16),
@@ -190,7 +196,7 @@ class MinterCheck(object):
             check.due_block,
             MinterConvertor.encode_coin_name(check.coin),
             MinterConvertor.convert_value(value=check.value, to='pip'),
-            MinterConvertor.encode_coin_name(cnnheck.gas_coin),
+            MinterConvertor.encode_coin_name(check.gas_coin),
             MinterHelper.hex2bin(check.lock)
         ])
         public_key = ECDSA.recover(msg_hash, list(check.signature.values()))

@@ -1,12 +1,16 @@
 import unittest
+
 from mintersdk.sdk.transactions import MinterSendCoinTx
 from mintersdk.sdk.deeplink import MinterDeeplink
 
 
 class TestDeeplink(unittest.TestCase):
     def test_fulltx(self):
-        tx = MinterSendCoinTx(coin='BIP', to='Mx18467bbb64a8edf890201d526c35957d82be3d95', value=1.23456789, nonce=1,
-                              gas_coin='MNT', gas_price=1, payload='Check payload')
+        tx = MinterSendCoinTx(
+            coin='BIP', to='Mx18467bbb64a8edf890201d526c35957d82be3d95',
+            value=1.23456789, nonce=1, gas_coin='MNT', gas_price=1,
+            payload='Check payload'
+        )
         deeplink = MinterDeeplink(tx=tx)
 
         self.assertEqual(
@@ -15,8 +19,11 @@ class TestDeeplink(unittest.TestCase):
         )
 
     def test_dataonly_with_payload(self):
-        tx = MinterSendCoinTx(coin='BIP', to='Mx18467bbb64a8edf890201d526c35957d82be3d95', value=1.23456789, nonce=1,
-                              gas_coin='MNT', gas_price=1, payload='Hello World')
+        tx = MinterSendCoinTx(
+            coin='BIP', to='Mx18467bbb64a8edf890201d526c35957d82be3d95',
+            value=1.23456789, nonce=1, gas_coin='MNT', gas_price=1,
+            payload='Hello World'
+        )
         deeplink = MinterDeeplink(tx=tx)
         deeplink.nonce = ''
         deeplink.gas_coin = ''
@@ -28,8 +35,11 @@ class TestDeeplink(unittest.TestCase):
         )
 
     def test_dataonly(self):
-        tx = MinterSendCoinTx(coin='BIP', to='Mx18467bbb64a8edf890201d526c35957d82be3d95', value=1.23456789, nonce=1,
-                              gas_coin='MNT', gas_price=1, payload='Hello World')
+        tx = MinterSendCoinTx(
+            coin='BIP', to='Mx18467bbb64a8edf890201d526c35957d82be3d95',
+            value=1.23456789, nonce=1, gas_coin='MNT', gas_price=1,
+            payload='Hello World'
+        )
         deeplink = MinterDeeplink(tx=tx, data_only=True)
 
         self.assertEqual(

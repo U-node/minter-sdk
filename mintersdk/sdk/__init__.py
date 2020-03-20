@@ -1,3 +1,6 @@
+"""
+@author: Roman Matusevich
+"""
 import bitcoin
 
 

@@ -1,7 +1,5 @@
-"""
-@author: rymka1989
-"""
 import unittest
+
 from mintersdk.sdk.transactions import (
     MinterTx, MinterDelegateTx, MinterSendCoinTx, MinterBuyCoinTx,
     MinterCreateCoinTx, MinterDeclareCandidacyTx, MinterEditCandidateTx,

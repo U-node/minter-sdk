@@ -24,34 +24,39 @@ Feel free to delegate to our 3% masternode Mp02bc3c3f77d5ab9732ef9fc3801a6d72dc1
 from mintersdk.minterapi import MinterAPI
 
 node_url = 'https://minter-node-1.testnet.minter.network:8841'  # Example of a node url
-api = MinterAPI(api_url=node_url, **kwargs)
+api = MinterAPI(api_url=node_url)
+
+# 'connect_timeout', 'read_timeout', 'headers' kwargs would be passed to request, if provided
+api = MinterAPI(api_url=node_url, connect_timeout=1, read_timeout=3, headers={})
 ```
-You can pass `requests` package attributes as `**kwargs`  
-E.g. `api = MinterAPI(api_url=node_url, timeout(1, 3), **kwargs)`
+Numeric strings automatically are converted to integers in `response['result']` dict.
+
+Some API methods accept `pip2bip (bool)` argument to convert coin values from PIP to BIP.  
+Values are `Decimal` type after conversion.
 
 ## Methods
-- `get_addresses(addresses, height=None)`  
+- `get_addresses(addresses, height=None, pip2bip=False)`  
   Returns addresses balances.
   
-- `get_balance(address, height=None)`  
+- `get_balance(address, height=None, pip2bip=False)`  
   Returns coins list, balance and transaction count (for nonce) of an address.
 
-- `get_block(height)`
+- `get_block(height, pip2bip=False)`
   Returns block data at given height.
   
-- `get_candidate(public_key, height=None)`  
+- `get_candidate(public_key, height=None, pip2bip=False)`  
   Returns candidate’s info by provided public_key. It will respond with 404 code if candidate is not found.
   
-- `get_candidates(height=None, include_stakes=False)`  
+- `get_candidates(height=None, include_stakes=False, pip2bip=False)`  
   Returns list of candidates.
   
-- `get_coin_info(symbol, height=None)`  
+- `get_coin_info(symbol, height=None, pip2bip=False)`  
   Returns information about coin. Note: this method does not return information about base coins (MNT and BIP).
   
-- `get_events(height)`  
+- `get_events(height, pip2bip=False)`  
   Returns events at given height.
   
-- `get_genesis()`  
+- `get_genesis(pip2bip=False)`  
   Return network genesis.
   
 - `get_max_gas_price(height=None)`  
@@ -72,10 +77,10 @@ E.g. `api = MinterAPI(api_url=node_url, timeout(1, 3), **kwargs)`
 - `get_status()`  
   Returns node status info.
   
-- `get_transaction(tx_hash)`  
+- `get_transaction(tx_hash, pip2bip=False)`  
   Returns transaction info.
   
-- `get_transactions(query, page=None, limit=None)`  
+- `get_transactions(query, page=None, limit=None, pip2bip=False)`  
   Return transactions by query.
   
 - `get_unconfirmed_transactions(limit=None)`  
@@ -84,16 +89,16 @@ E.g. `api = MinterAPI(api_url=node_url, timeout(1, 3), **kwargs)`
 - `get_validators(height=None, page=None, limit=None)`  
   Returns list of active validators.
   
-- `estimate_coin_buy(coin_to_sell, value_to_buy, coin_to_buy, height=None)`  
+- `estimate_coin_buy(coin_to_sell, value_to_buy, coin_to_buy, height=None, pip2bip=False)`  
   Return estimate of buy coin transaction.
   
-- `estimate_coin_sell(coin_to_sell, value_to_sell, coin_to_buy, height=None)`  
+- `estimate_coin_sell(coin_to_sell, value_to_sell, coin_to_buy, height=None, pip2bip=False)`  
   Return estimate of sell coin transaction.
   
-- `estimate_coin_sell_all(coin_to_sell, value_to_sell, coin_to_buy, height=None)`  
+- `estimate_coin_sell_all(coin_to_sell, value_to_sell, coin_to_buy, height=None, pip2bip=False)`  
   Return estimate of sell all coin transaction.
   
-- `estimate_tx_commission(tx, height=None)`  
+- `estimate_tx_commission(tx, height=None, pip2bip=False)`  
   Return estimate of transaction.
   
 - `send_transaction(tx)`  
@@ -109,7 +114,8 @@ Each Minter transaction requires `nonce, gas_coin` to be passed.  Also you can p
 
 **To create Minter transaction you MUST use concrete transaction class.**
 
-All transaction values should be passed in BIP, you shouldn't convert them to PIP.
+All transaction values should be passed in BIP, you shouldn't convert them to PIP.  
+All coin symbols are case insensitive, e.g. you can pass `gas_coin='BIP'` or `gas_coin='bip'`
 
 ### Transactions
 - MinterBuyCoinTx

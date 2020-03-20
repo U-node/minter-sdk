@@ -1,4 +1,5 @@
 import unittest
+
 from mintersdk.sdk.check import MinterCheck
 from mintersdk.sdk.transactions import MinterTx
 
@@ -27,12 +28,18 @@ class TestMinterCheck(unittest.TestCase):
         self.assertEqual(check, self.VALID_CHECK)
 
     def test_proof(self):
-        proof = MinterCheck.proof(address=self.ADDRESS, passphrase=self.PASSPHRASE)
+        proof = MinterCheck.proof(
+            address=self.ADDRESS,
+            passphrase=self.PASSPHRASE
+        )
 
         self.assertEqual(proof, self.VALID_PROOF)
 
     def test_fromraw(self):
         check = MinterCheck.from_raw(rawcheck=self.VALID_CHECK)
 
-        self.assertEqual(check.owner, 'Mxce931863b9c94a526d94acd8090c1c5955a6eb4b')
+        self.assertEqual(
+            check.owner,
+            'Mxce931863b9c94a526d94acd8090c1c5955a6eb4b'
+        )
         self.assertEqual(check.gas_coin, self.CHECK.gas_coin)

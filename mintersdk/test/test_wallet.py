@@ -1,9 +1,5 @@
-'''
-Created on 4 нояб. 2018 г.
-
-@author: Roman
-'''
 import unittest
+
 from mintersdk.sdk.wallet import MinterWallet
 
 
