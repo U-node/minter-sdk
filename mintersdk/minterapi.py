@@ -178,6 +178,12 @@ class MinterAPI(object):
 
         return response
 
+    def get_latest_block_height(self):
+        """
+        Get latest block height
+        """
+        return self.get_status()['result']['latest_block_height']
+
     def get_events(self, height, pip2bip=False):
         """
         Get events at given height
@@ -244,11 +250,20 @@ class MinterAPI(object):
         Return estimate of sell coin transaction
         Args:
             coin_to_sell (string): coin name to sell
-            value_to_sell (string|int): amount of coins to sell
+            value_to_sell (string|int): Amount of coins to sell in PIP.
+                    Provide `value_to_sell` in PIP, if `pip2bip` False.
+                    Provide `value_to_sell` in BIP, if `pip2bip` True.
             coin_to_buy (string): coin name to buy
             height (int): block height
             pip2bip (bool): Convert coin amounts to BIP (default is in PIP)
         """
+        # Convert `value_to_sell` to PIP, if needed
+        if pip2bip:
+            value_to_sell = MinterConvertor.convert_value(
+                value=value_to_sell, to='pip'
+            )
+
+        # Get default response
         response = self._request(
             command='estimate_coin_sell',
             params={
@@ -259,6 +274,7 @@ class MinterAPI(object):
             }
         )
 
+        # Convert response values from PIP to BIP, if needed
         if pip2bip:
             return self.__response_processor(
                 data=response, funcs=[self.__pip_to_bip]
@@ -272,11 +288,20 @@ class MinterAPI(object):
         Return estimate of sell all coin transaction.
         Args:
             coin_to_sell (string): coin name to sell
-            value_to_sell (string|int): amount of coins to sell
+            value_to_sell (string|int): Amount of coins to sell in PIP.
+                    Provide `value_to_sell` in PIP, if `pip2bip` False.
+                    Provide `value_to_sell` in BIP, if `pip2bip` True.
             coin_to_buy (string): coin name to buy
             height (int): block height
             pip2bip (bool): Convert coin amounts to BIP (default is in PIP)
         """
+        # Convert `value_to_sell` to PIP, if needed
+        if pip2bip:
+            value_to_sell = MinterConvertor.convert_value(
+                value=value_to_sell, to='pip'
+            )
+
+        # Get default response
         response = self._request(
             command='estimate_coin_sell_all',
             params={
@@ -287,6 +312,7 @@ class MinterAPI(object):
             }
         )
 
+        # Convert response values from PIP to BIP, if needed
         if pip2bip:
             return self.__response_processor(
                 data=response, funcs=[self.__pip_to_bip]
@@ -300,11 +326,20 @@ class MinterAPI(object):
         Return estimate of buy coin transaction
         Args:
             coin_to_sell (string): coin name to sell
-            value_to_buy (string): amount of coins to buy
+            value_to_buy (string): Amount of coins to buy in PIP.
+                    Provide `value_to_buy` in PIP, if `pip2bip` False.
+                    Provide `value_to_buy` in BIP, if `pip2bip` True.
             coin_to_buy (string): coin name to buy
             height (int): block height
             pip2bip (bool): Convert coin amounts to BIP (default is in PIP)
         """
+        # Convert `value_to_buy` to PIP, if needed
+        if pip2bip:
+            value_to_buy = MinterConvertor.convert_value(
+                value=value_to_buy, to='pip'
+            )
+
+        # Get default response
         response = self._request(
             command='estimate_coin_buy',
             params={
@@ -315,6 +350,7 @@ class MinterAPI(object):
             }
         )
 
+        # Convert response values from PIP to BIP, if needed
         if pip2bip:
             return self.__response_processor(
                 data=response, funcs=[self.__pip_to_bip]

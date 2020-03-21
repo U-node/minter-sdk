@@ -268,27 +268,19 @@ class MinterTx(object):
         Returns:
             int
         """
-
-        # Multiplied gas commission in PIP
-        gas_price = MinterHelper.pybcmul(
-            self.COMMISSION, self.FEE_DEFAULT_MULTIPLIER
-        )
-
         # Commission for payload and service_data bytes
-        payload_len = len(bytes(self.payload, encoding='utf-8'))
-        service_data_len = len(bytes(self.service_data, encoding='utf-8'))
-
-        commission = MinterHelper.pybcadd(
-            MinterHelper.pybcmul(
-                payload_len * self.PAYLOAD_COMMISSION,
-                self.FEE_DEFAULT_MULTIPLIER
-            ),
-            MinterHelper.pybcmul(
-                service_data_len * self.PAYLOAD_COMMISSION,
-                self.FEE_DEFAULT_MULTIPLIER)
+        payload_gas = (
+            MinterHelper.bytes_len(self.payload) * self.PAYLOAD_COMMISSION
+        )
+        service_data_gas = (
+            MinterHelper.bytes_len(self.service_data) * self.PAYLOAD_COMMISSION
         )
 
-        return int(MinterHelper.pybcadd(gas_price, commission))
+        # Total commission
+        commission = self.COMMISSION + payload_gas + service_data_gas
+        commission *= self.FEE_DEFAULT_MULTIPLIER
+
+        return commission
 
     @classmethod
     def from_raw(cls, raw_tx):
@@ -1212,12 +1204,12 @@ class MinterMultiSendCoinTx(MinterTx):
         multisend-specific fee: (n_txs - 1) * 5 units
         """
         base_fee = super().get_fee()
-        recipients_fee = MinterHelper.pybcmul(
-            (len(self.txs) - 1) * self.COMMISSION_PER_RECIPIENT,
+        recipients_fee = (
+            (len(self.txs)-1) * self.COMMISSION_PER_RECIPIENT *
             self.FEE_DEFAULT_MULTIPLIER
         )
 
-        return int(MinterHelper.pybcadd(base_fee, recipients_fee))
+        return base_fee + recipients_fee
 
     def _structure_from_instance(self):
         """ Override parent method to add tx special data. """

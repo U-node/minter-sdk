@@ -59,6 +59,9 @@ Values are `Decimal` type after conversion.
 - `get_genesis(pip2bip=False)`  
   Return network genesis.
   
+- `get_latest_block_height()`  
+  Returns latest block height.
+  
 - `get_max_gas_price(height=None)`  
   Returns current max gas price.
   
@@ -90,13 +93,16 @@ Values are `Decimal` type after conversion.
   Returns list of active validators.
   
 - `estimate_coin_buy(coin_to_sell, value_to_buy, coin_to_buy, height=None, pip2bip=False)`  
-  Return estimate of buy coin transaction.
+  Return estimate of buy coin transaction.  
+  Provide value in PIP if `pip2bip is False` or in BIP if `pip2bip is True`
   
 - `estimate_coin_sell(coin_to_sell, value_to_sell, coin_to_buy, height=None, pip2bip=False)`  
-  Return estimate of sell coin transaction.
+  Return estimate of sell coin transaction.  
+  Provide value in PIP if `pip2bip is False` or in BIP if `pip2bip is True`
   
 - `estimate_coin_sell_all(coin_to_sell, value_to_sell, coin_to_buy, height=None, pip2bip=False)`  
-  Return estimate of sell all coin transaction.
+  Return estimate of sell all coin transaction.  
+  Provide value in PIP if `pip2bip is False` or in BIP if `pip2bip is True`
   
 - `estimate_tx_commission(tx, height=None, pip2bip=False)`  
   Return estimate of transaction.

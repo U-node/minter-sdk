@@ -14,22 +14,41 @@ class MinterConvertor:
     """
 
     # PIP in BIP
-    DEFAULT = '1000000000000000000'
+    DEFAULT = 1000000000000000000
 
     @classmethod
-    def convert_value(cls, value, to):
+    def convert_value(cls, value, to, prec=33):
         """
         Convert values from/to pip/bip.
         Args:
             value (string|int|Decimal|float): value to convert
             to (string): coin to convert value to
+            prec (int): decimal context precision (decimal number length)
         Returns:
             int|Decimal
         """
+        # Get default decimal context
+        context = decimal.getcontext()
+        # Set temporary decimal context for calculation
+        decimal.setcontext(
+            decimal.Context(prec=prec, rounding=decimal.ROUND_DOWN)
+        )
+
+        # PIP in BIP in Decimal
+        default = decimal.Decimal(str(cls.DEFAULT))
+        # Value in Decimal
+        value = decimal.Decimal(str(value))
+
+        # Make conversion
         if to == 'pip':
-            return int(MinterHelper.pybcmul(value, cls.DEFAULT))
+            value = int(value * default)
         elif to == 'bip':
-            return MinterHelper.pybcdiv(value, cls.DEFAULT)
+            value /= default
+
+        # Reset decimal context to default
+        decimal.setcontext(context)
+
+        return value
 
     @classmethod
     def encode_coin_name(cls, symbol):
@@ -61,62 +80,6 @@ class MinterHelper:
     """
     Class which contains different helpers
     """
-
-    @classmethod
-    def pybcmul(cls, value, miltiplyer, precision=25):
-        """
-        Implementation of PHP bcmul.
-        We need to implementation bcmul php function,
-        because firstly sdk was written in PHP.
-        Thats why we change decimal roundings.
-        """
-
-        decimal.getcontext().rounding = decimal.ROUND_DOWN
-        decimal.getcontext().prec = precision
-
-        return decimal.Decimal(str(value)) * decimal.Decimal(str(miltiplyer))
-
-    @classmethod
-    def pybcdiv(cls, value, divider, precision=25):
-        """
-        Implementation of PHP bcdiv.
-        We need to implementation bcdiv php function,
-        because firstly sdk was written in PHP.
-        Thats why we change decimal roundings.
-        """
-
-        decimal.getcontext().rounding = decimal.ROUND_DOWN
-        decimal.getcontext().prec = precision
-
-        return decimal.Decimal(str(value)) / decimal.Decimal(str(divider))
-
-    @classmethod
-    def pybcadd(cls, addendf, addends, precision=25):
-        """
-        Implementation of PHP bcadd.
-        We need to implementation bcadd php function,
-        because firstly sdk was written in PHP.
-        Thats why we change decimal roundings.
-        """
-
-        decimal.getcontext().rounding = decimal.ROUND_DOWN
-        decimal.getcontext().prec = precision
-
-        return decimal.Decimal(str(addendf)) + decimal.Decimal(str(addends))
-
-    @classmethod
-    def pybcsub(cls, addendf, addends, precision=25):
-        """
-        Implementation of PHP bcsub.
-        We need to implementation bcadd php function,
-        because firstly sdk was written in PHP.
-        Thats why we change decimal roundings.
-        """
-
-        decimal.getcontext().rounding = decimal.ROUND_DOWN
-        decimal.getcontext().prec = precision
-
-        return decimal.Decimal(str(addendf)) - decimal.Decimal(str(addends))
 
     @classmethod
     def keccak_hash(cls, data, digest_bits=256):
@@ -187,6 +150,7 @@ class MinterHelper:
         Validator address is used in signing blocks.
         Args:
             pub_key (string): candidate public key (Mp....)
+            upper (bool)
         Returns:
             string, validator address
         """
@@ -221,7 +185,7 @@ class MinterHelper:
             version (int): The version parameter specifies the size and data
                            capacity of the code.
                            Versions are any integer between 1 and 40
-            mode (str): The mode parameter sets how the contents will be encoded.
+            mode (str): The mode param sets how the contents will be encoded.
                         Three of the four possible encodings are available.
                         By default, the object uses the most efficient
                         encoding for the contents. You can override this
@@ -266,6 +230,11 @@ class MinterHelper:
             return fnpath
         else:
             raise Exception('Wrong QR code render mode')
+
+    @staticmethod
+    def bytes_len(value, encoding='utf-8'):
+        """ Count string bytes length """
+        return len(bytes(value, encoding=encoding))
 
 
 class MinterPrefix:
