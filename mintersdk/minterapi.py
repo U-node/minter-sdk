@@ -5,7 +5,7 @@ import requests
 import json
 
 from deprecated import deprecated
-from mintersdk import MinterConvertor
+from mintersdk import MinterHelper
 
 
 class MinterAPI(object):
@@ -259,9 +259,7 @@ class MinterAPI(object):
         """
         # Convert `value_to_sell` to PIP, if needed
         if pip2bip:
-            value_to_sell = MinterConvertor.convert_value(
-                value=value_to_sell, to='pip'
-            )
+            value_to_sell = MinterHelper.to_pip(value_to_sell)
 
         # Get default response
         response = self._request(
@@ -297,9 +295,7 @@ class MinterAPI(object):
         """
         # Convert `value_to_sell` to PIP, if needed
         if pip2bip:
-            value_to_sell = MinterConvertor.convert_value(
-                value=value_to_sell, to='pip'
-            )
+            value_to_sell = MinterHelper.to_pip(value_to_sell)
 
         # Get default response
         response = self._request(
@@ -335,9 +331,7 @@ class MinterAPI(object):
         """
         # Convert `value_to_buy` to PIP, if needed
         if pip2bip:
-            value_to_buy = MinterConvertor.convert_value(
-                value=value_to_buy, to='pip'
-            )
+            value_to_buy = MinterHelper.to_pip(value_to_buy)
 
         # Get default response
         response = self._request(
@@ -575,7 +569,7 @@ class MinterAPI(object):
                     (key in include_keys and key not in exclude_keys) or
                     key.isupper()
                 ):
-            return MinterConvertor.convert_value(value=value, to='bip')
+            return MinterHelper.to_bip(value)
 
         return value
 

@@ -407,13 +407,13 @@ wallet = MinterWallet.create(mnemonic='YOUR MNEMONIC PHRASE')
 # Helpers
 ## Convert between PIP and BIP
 ```python
-from mintersdk import MinterConvertor
+from mintersdk.shortcuts import to_pip, to_bip
 
 # Get BIP from PIP
 pip_value = 1000000000000000000
-bip_value = MinterConvertor.convert_value(value=pip_value, to='bip')
+bip_value = to_bip(pip_value)
 
 # Get PIP from BIP
 bip_value = 100
-pip_value = MinterConvertor.convert_value(value=bip_value, to='pip')
+pip_value = to_pip(bip_value)
 ```

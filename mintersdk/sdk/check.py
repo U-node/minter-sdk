@@ -5,7 +5,7 @@ import binascii
 import hashlib
 
 import rlp
-from mintersdk import MinterHelper, MinterConvertor, MinterPrefix
+from mintersdk import MinterHelper, PREFIX_CHECK, PREFIX_PUBKEY
 from mintersdk.sdk import ECDSA
 from mintersdk.sdk.wallet import MinterWallet
 
@@ -86,9 +86,9 @@ class MinterCheck(object):
             int(binascii.hexlify(str(self.nonce).encode()), 16),
             self.chain_id,
             self.due_block,
-            MinterConvertor.encode_coin_name(self.coin),
-            MinterConvertor.convert_value(value=self.value, to='pip'),
-            MinterConvertor.encode_coin_name(self.gas_coin)
+            MinterHelper.encode_coin_name(self.coin),
+            MinterHelper.to_pip(self.value),
+            MinterHelper.encode_coin_name(self.gas_coin)
         ]
 
         # Create msg hash
@@ -120,7 +120,7 @@ class MinterCheck(object):
         # Get RLP, which will be the check
         check = binascii.hexlify(rlp.encode(structure))
 
-        return MinterPrefix.CHECK + check.decode()
+        return MinterHelper.prefix_add(check.decode(), PREFIX_CHECK)
 
     @classmethod
     def proof(cls, address, passphrase):
@@ -134,10 +134,7 @@ class MinterCheck(object):
         """
 
         # Get address hash
-        address = MinterPrefix.remove_prefix(
-            string=address,
-            prefix=MinterPrefix.ADDRESS
-        )
+        address = MinterHelper.prefix_remove(address)
         address = MinterHelper.hex2bin(address)
         address_hash = cls.__hash(data=[address])
 
@@ -162,10 +159,7 @@ class MinterCheck(object):
         """
 
         # Remove check prefix and RLP decode it
-        rawcheck = MinterPrefix.remove_prefix(
-            string=rawcheck,
-            prefix=MinterPrefix.CHECK
-        )
+        rawcheck = MinterHelper.prefix_remove(rawcheck)
         rawcheck = binascii.unhexlify(rawcheck)
         decoded = rlp.decode(rawcheck)
 
@@ -174,12 +168,9 @@ class MinterCheck(object):
             'nonce': int(decoded[0].decode()),
             'chain_id': MinterHelper.bin2int(decoded[1]),
             'due_block': MinterHelper.bin2int(decoded[2]),
-            'coin': MinterConvertor.decode_coin_name(decoded[3]),
-            'value': MinterConvertor.convert_value(
-                value=MinterHelper.bin2int(decoded[4]),
-                to='bip'
-            ),
-            'gas_coin': MinterConvertor.decode_coin_name(decoded[5]),
+            'coin': MinterHelper.decode_coin_name(decoded[3]),
+            'value': MinterHelper.to_bip(MinterHelper.bin2int(decoded[4])),
+            'gas_coin': MinterHelper.decode_coin_name(decoded[5]),
             'lock': binascii.hexlify(decoded[6]).decode(),
             'signature': {
                 'v': MinterHelper.bin2int(decoded[7]),
@@ -194,13 +185,13 @@ class MinterCheck(object):
             int(binascii.hexlify(str(check.nonce).encode()), 16),
             check.chain_id,
             check.due_block,
-            MinterConvertor.encode_coin_name(check.coin),
-            MinterConvertor.convert_value(value=check.value, to='pip'),
-            MinterConvertor.encode_coin_name(check.gas_coin),
+            MinterHelper.encode_coin_name(check.coin),
+            MinterHelper.to_pip(check.value),
+            MinterHelper.encode_coin_name(check.gas_coin),
             MinterHelper.hex2bin(check.lock)
         ])
         public_key = ECDSA.recover(msg_hash, list(check.signature.values()))
-        public_key = MinterPrefix.PUBLIC_KEY + public_key
+        public_key = MinterHelper.prefix_add(public_key, PREFIX_PUBKEY)
 
         check.owner = MinterWallet.get_address_from_public_key(public_key)
 

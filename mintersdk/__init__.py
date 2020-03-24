@@ -1,13 +1,26 @@
+import os
+import random
 import decimal
 import binascii
 import string
 import hashlib
 import sha3
+
 import pyqrcode
-import random
-import os
+from deprecated import deprecated
 
 
+# Number of PIP in 1 BIP
+PIP = 1000000000000000000
+
+# Prefixes
+PREFIX_ADDR = 'Mx'
+PREFIX_PUBKEY = 'Mp'
+PREFIX_CHECK = 'Mc'
+PREFIX_TX = 'Mt'
+
+
+@deprecated("Use 'to_bip', 'to_pip' shortcuts or MinterHelper methods")
 class MinterConvertor:
     """
     Class contains different converters
@@ -81,8 +94,8 @@ class MinterHelper:
     Class which contains different helpers
     """
 
-    @classmethod
-    def keccak_hash(cls, data, digest_bits=256):
+    @staticmethod
+    def keccak_hash(data, digest_bits=256):
         """
         Create Keccak hash.
         Args:
@@ -101,8 +114,8 @@ class MinterHelper:
 
         return khash.hexdigest()
 
-    @classmethod
-    def hex2bin(cls, string):
+    @staticmethod
+    def hex2bin(string):
         return binascii.unhexlify(string)
 
     @classmethod
@@ -135,16 +148,16 @@ class MinterHelper:
 
         return _dict
 
-    @classmethod
-    def bin2hex(cls, bts):
+    @staticmethod
+    def bin2hex(bts):
         return binascii.hexlify(bts).decode()
 
-    @classmethod
-    def bin2int(cls, number):
+    @staticmethod
+    def bin2int(number):
         return int(binascii.hexlify(number), 16)
 
-    @classmethod
-    def get_validator_address(cls, pub_key, upper=True):
+    @staticmethod
+    def get_validator_address(pub_key, upper=True):
         """
         Get validator address from it's pub key (Mp...).
         Validator address is used in signing blocks.
@@ -156,7 +169,7 @@ class MinterHelper:
         """
 
         pub_key = binascii.unhexlify(
-            MinterPrefix.remove_prefix(pub_key, MinterPrefix.PUBLIC_KEY)
+            MinterHelper.remove_prefix(pub_key, PREFIX_PUBKEY)
         )
 
         vaddress = hashlib.sha256(pub_key).hexdigest()[:40]
@@ -236,7 +249,93 @@ class MinterHelper:
         """ Count string bytes length """
         return len(bytes(value, encoding=encoding))
 
+    @staticmethod
+    def encode_coin_name(symbol):
+        """
+        Add nulls to coin name
+        Args:
+            symbol (string): coin symbol
+        Returns:
+            string
+        """
+        return symbol + chr(0) * (10 - len(symbol))
 
+    @staticmethod
+    def decode_coin_name(symbol):
+        """
+        Args:
+            symbol (bytes|str)
+        Returns:
+            string
+        """
+
+        if hasattr(symbol, 'decode'):
+            symbol = symbol.decode()
+
+        return symbol.replace(chr(0), '')
+
+    @staticmethod
+    def to_pip(value):
+        """
+        Convert BIPs to PIPs.
+        Always cast value to str, due to float behaviour:
+            Decimal(0.1) = Decimal('0.10000000000004524352345234')
+            Decimal('0.1') = Decimal('0.1')
+        Args:
+            value (str|float|int): value in BIP
+        Returns:
+            int
+        """
+        return int(decimal.Decimal(str(value)) * decimal.Decimal(PIP))
+
+    @staticmethod
+    def to_bip(value):
+        """
+        Convert PIPs to BIPs.
+        Use dynamic Decimal precision, depending on value length.
+        Args:
+            value (int|str): value in PIP
+        Returns:
+            Decimal
+        """
+        # Check if value is correct PIP value
+        if type(value) not in [int, str]:
+            raise ValueError(f'{value} should be int or str')
+        if type(value) is str and not value.isdigit():
+            raise ValueError(f'{value} is not correct PIP value')
+
+        # Get default decimal context
+        context = decimal.getcontext()
+        # Set temporary decimal context for calculation
+        decimal.setcontext(
+            decimal.Context(prec=len(str(value)), rounding=decimal.ROUND_DOWN)
+        )
+
+        # Convert value
+        value = decimal.Decimal(value) / decimal.Decimal(PIP)
+
+        # Reset decimal context to default
+        decimal.setcontext(context)
+
+        return value
+
+    @staticmethod
+    def prefix_add(value, prefix):
+        if prefix not in [PREFIX_ADDR, PREFIX_PUBKEY, PREFIX_CHECK, PREFIX_TX]:
+            raise ValueError(f"Unknown prefix '{prefix}'")
+        return prefix + value
+
+    @staticmethod
+    def prefix_remove(value):
+        value = value.replace(PREFIX_ADDR, '')
+        value = value.replace(PREFIX_PUBKEY, '')
+        value = value.replace(PREFIX_CHECK, '')
+        value = value.replace(PREFIX_TX, '')
+
+        return value
+
+
+@deprecated("Deprecated. Use 'MinterHelper' class instead")
 class MinterPrefix:
     """
     Class with minter prefixes and operations with them.

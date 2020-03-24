@@ -7,7 +7,7 @@ import hashlib
 import hmac
 from mnemonic.mnemonic import Mnemonic
 from mintersdk.two1.bitcoin.crypto import HDKey, HDPrivateKey, bitcoin_curve
-from mintersdk import MinterHelper, MinterPrefix
+from mintersdk import MinterHelper, PREFIX_PUBKEY, PREFIX_ADDR
 
 
 class MinterWallet(object):
@@ -88,9 +88,8 @@ class MinterWallet(object):
             int.from_bytes(binascii.unhexlify(private_key), 'big')
         )
 
-        return (
-            MinterPrefix.PUBLIC_KEY +
-            binascii.hexlify(bytes(public_key)).decode()[2:]
+        return MinterHelper.prefix_add(
+            binascii.hexlify(bytes(public_key)).decode()[2:], PREFIX_PUBKEY
         )
 
     @classmethod
@@ -103,9 +102,7 @@ class MinterWallet(object):
         """
         # Create keccak hash
         _keccak = MinterHelper.keccak_hash(
-            binascii.unhexlify(
-                public_key.replace(MinterPrefix.PUBLIC_KEY, '')
-            )
+            binascii.unhexlify(MinterHelper.prefix_remove(public_key))
         )
 
-        return MinterPrefix.ADDRESS + _keccak[-40:]
+        return MinterHelper.prefix_add(_keccak[-40:], PREFIX_ADDR)

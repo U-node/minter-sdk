@@ -4,7 +4,7 @@
 import binascii
 
 import rlp
-from mintersdk import MinterConvertor
+from mintersdk import MinterHelper
 
 
 class MinterDeeplink(object):
@@ -48,7 +48,7 @@ class MinterDeeplink(object):
         """
 
         # Create deeplink structure
-        gas_coin = MinterConvertor.encode_coin_name(
+        gas_coin = MinterHelper.encode_coin_name(
             self.gas_coin
         ) if self.gas_coin else ''
         deep_structure = [self.__type, self.__data, self.payload, self.nonce,
