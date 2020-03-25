@@ -245,7 +245,7 @@ class MinterHelper:
     @staticmethod
     def bytes_len(value, encoding='utf-8'):
         """
-        Count string bytes length
+        Count bytes length
         Args:
             value (str|bytes)
             encoding (str)
@@ -306,7 +306,7 @@ class MinterHelper:
         """
         # Check if value is correct PIP value
         if type(value) not in [int, str]:
-            raise ValueError(f'{value} should be int or str')
+            raise ValueError(f"{value} should be 'int' or 'str of digits'")
         if type(value) is str and not value.isdigit():
             raise ValueError(f'{value} is not correct PIP value')
 
