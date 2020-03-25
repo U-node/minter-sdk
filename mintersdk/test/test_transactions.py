@@ -1,4 +1,5 @@
 import unittest
+import base64
 
 from mintersdk.sdk.transactions import (
     MinterTx, MinterDelegateTx, MinterSendCoinTx, MinterBuyCoinTx,
@@ -765,6 +766,84 @@ class TestMinterSendMultisigTx(unittest.TestCase):
 
         self.TX.sign(private_key=self.PRIVATE_KEYS[0], signature=signatures[1:], ms_address=self.FROM)
         self.assertEqual(self.TX.signed_tx, self.SIGNED_TX)
+
+
+class TestPayloadsFromRaw(unittest.TestCase):
+    def setUp(self):
+        self.TO = 'Mxd82558ea00eb81d35f2654953598f5d51737d31d'
+        self.FROM = 'Mx31e61a05adbd13c6b625262704bc305bf7725026'
+        self.PK = '07bc17abdcee8b971bb8723e36fe9d2523306d5ab2d683631693238e0f9df142'
+        self.TX = MinterSendCoinTx(
+            nonce=1, gas_coin='mnt', to=self.TO, coin='mnt', value=1
+        )
+        self.TX_DECODED = None
+
+    def sign_and_decode(self, payload):
+        self.TX.payload = payload
+        self.TX.sign(private_key=self.PK)
+        self.TX_DECODED = MinterTx.from_raw(self.TX.signed_tx)
+
+    def test_hex_like(self):
+        payload = 'fff'
+        self.sign_and_decode(payload)
+
+        self.assertEqual(payload, self.TX_DECODED.payload)
+        self.assertEqual(self.FROM, self.TX_DECODED.from_mx)
+
+    def test_str_bytes(self):
+        payload = '🔳'
+        self.sign_and_decode(payload)
+
+        self.assertEqual(payload, self.TX_DECODED.payload)
+        self.assertEqual(self.FROM, self.TX_DECODED.from_mx)
+
+    def test_raw_bytes(self):
+        payload = b'\xff\xff\xff'
+        self.sign_and_decode(payload)
+
+        self.assertEqual(payload, self.TX_DECODED.payload)
+        self.assertEqual(self.FROM, self.TX_DECODED.from_mx)
+
+
+class TestFromBase64(unittest.TestCase):
+    def setUp(self):
+        self.B64_TXS = [
+            '+Hw8AQGKQklQAAAAAAAAAAKi4YpPTEJJVFgAAAAAiQHluPqP4qwAAIpMRU1PTgAAAAAAgICAAbhF+EMboPtT5w1Brh5BO66qs75e1sOj9Ka4KfxGQDOFsQssgNn/oAeDnTkaMj685tdWvWa6rUmViaCB+KerPBDHUE7O731j',
+            '+H+DBJaHAQGKQklQAAAAAAAAAAGi4YpCSVAAAAAAAAAAlJXK8ve/qfgqz5QEbX52KCQKOQ/bgICAAbhF+EMcoFVh1TOlkwUHmSpEvOQprRnZgnpSeIFxXn15fApbl28qoFR5GhbH34BiCmpwqY+Qs4xI5DjfE9PNfVYEZ7axgyvc',
+            '+IeCGxkBAYpCSVAAAAAAAAAAAavqikNPTlNVTEdBTUWUm7rikGga0Jtdjuse5KRJp2SOn8WJAaBVaQ2duAAAgIABuEX4QxygBQd9EAxqcsKigdqsvCEVA5GapLPxdlbZ/DYkC3RXpYOgJ2QuKIW1U/yrTVec56v06V42VwaO2VRqGvuJVLkojvU=',
+            '+HqCMGYBAYpCSVAAAAAAAAAAA57dikJJUAAAAAAAAACKQ0VOVEFVUlVTAIZa8xB6QACAgAG4RfhDG6A+PinAE4fNMpPwC8U8/DbHNSIERcWDE9rridQ1DyECAaBiGkXNmAgUnYK2VjJjMLJGWLN4T3jz/2KylTFZqXNM5Q==',
+            '+H6CBYcBAYpCSVAAAAAAAAAAAqLhikJJUAAAAAAAAACJARWORgkT0AAAilRBUFRBUAAAAACAgIABuEX4Qxug8tXe0wJ61FNJq+p/KEVsTE044Cq5mqtnD55xyUM2niigCPjkKq+K5Rabeghgyf7+zxjOhykruz0dQOoZR5GzbZ8=',
+            '+JKB2AEBikJJUAAAAAAAAAAHt/agd/cYNBCOm15lI3o5JjYxtPmanVhDehOFyTDBPuHU4qaKT05MWTEAAAAAAIm+S9/Lh9P4ZoqAgAG4RfhDG6AVkWCf6F/LQlIUjBFQFCcfAgWxhRBTs7ZdLDLOaUQntaB/C/kHw/fRLDH/ZMM5hdZpx87pZZfTRTuQ6Peda7ParA==',
+            '+IRVAQGKQklQAAAAAAAAAAGq6YpCSVAAAAAAAAAAlG3tXZ5JAX3uqMMYO7aKsxx9JGTxiIrHIwSJ6AAAgIABuEX4QxugLtA0N8YgapJtAF4/oq4mgnDeTAFy64tAfhlY2POh4fmgTB1pdMhcBzpSiPqUTVPTCn+xwAxpTD8eQsV5+ZWEM40=',
+            '+JKCTDIBAYpCSVAAAAAAAAAAB7b1oGKbVSjwnRx0qD0YQU8uQmPhSFDEej+sP4VfIAERERERikJJUAAAAAAAAACIRWORgkT0AACAgAG4RfhDG6BbXtr6FKf4Ifdlji3nCSqUQ3OEfReYBUfa71+zNb0wh6AEZSWMY7CGXvh3Rqjjiam9IT3NL7gvI/wrqxSrFkxj/g==',
+            '+JOCB6IBAYpCSVAAAAAAAAAAB7f2oGKbVSjwnRx0qD0YQU8uQmPhSFDEej+sP4VfIAERERERikJJUAAAAAAAAACJFa8deLWMQAAAgIABuEX4Qxyg3MYUWNZZPy1k4ikM97HJ7RJuLCHyteqUymPVQ+r+qJygcN2yKmUK9adEaqjQRNEHesgRE+dAlamHu2Bd7OE4zwI=',
+            '+JOCAZIBAYpCSVAAAAAAAAAAB7f2oGKbVSjwnRx0qD0YQU8uQmPhSFDEej+sP4VfIAERERERikJJUAAAAAAAAACJBbEq76+oBAAAgIABuEX4QxygLl0jQ98RtdXCkIKDYce9OD11tpA4kmAtPLXIGkeycAKgGRsYDVVx+SD98N4zKByD2H+w0yToFuZk8gN2PtWVNpQ=',
+            '+IQJAQGKQklQAAAAAAAAAAGq6YpCSVAAAAAAAAAAlJ9/UFrwbYh8dflHt3kRDT99fUG/iJNP9bP1XNAAgIABuEX4QxugOu3JcCce9OO5rpWDVsQpGk+gwTLbt3p8qu2YM7Tg1UGgF8Ez00im24HKFlJM2DWoUSJ3G1BjzREg1AGG6dP1s1s=',
+            '+H6CB1UBAYpCSVAAAAAAAAAAAqLhikJJUAAAAAAAAACJEENWGogpMAAAikNFTlRBVVJVUwCAgIABuEX4QxugfLaJkvWttDTqA9EelJ+9RQ8anWwngbIkeOuQydh0RI2gB0JC+oxPrSmB8dZmazeh3ot2Ff6bE2czGfwgPu7ZpCg=',
+            '+PaCAw8BAYpCSVAAAAAAAAAAAavqikJJUAAAAAAAAACUvW+bnucw5qCqmK4SHaLeJ1gp4YSJYadP9azWWcAAuG5CaXBleC5uZXQgLSBTdWNjZXNzIEJpcCB3aXRoZHJhd2FsICMxMzczOC4gT3VyIGN1cnJlbnQgZXhjaGFuZ2UgcmF0ZXMgZm9yIDEgQklQOiAwLjAxNDckIC8gMC4wMTUzJC4gRm9sbG93IHVzLoABuEX4Qxug7zYujmw36ehtj+scZxn+Zlpj3NrtUp924DwBS9+hkJagQtz8zLrB4jgzLnFtDv1F0t1gKQnpU6PyTYGuicMMRe0=',
+            '+H+DBJaLAQGKQklQAAAAAAAAAAGi4YpCSVAAAAAAAAAAlJXK8ve/qfgqz5QEbX52KCQKOQ/bgICAAbhF+EMboKGqlP2cC2tqtsnntOBRAg9XNsVBBb5wLBjCPlp5RuBaoDLYDXbDwKQz/ONyYoDV9AUI0C7wCME+T/gGeR1BEdCu',
+            '+JOCARABAYpCSVAAAAAAAAAAB7f2oEiBrRZ8pftYhjIoQfmS1ortiU/8tYq8CA6K07FW8QRbikJJUAAAAAAAAACJA9NIdC2o2QDmgIABuEX4QxugGdqhQ+dkzUft+Pc5/A0TYUXcZLGDLA8C/5Q2GzNhRoygaAxGtwGHh9VCrOUVsUCvxOyMSZkMqIbC2i7LVKNY6qU=',
+            '+IQJAQGKQklQAAAAAAAAAAGq6YpCSVAAAAAAAAAAlJ9/UFrwbYh8dflHt3kRDT99fUG/iJb2P7XLwAAAgIABuEX4QxygHiZ64dA9EZbsmjLMtDWPvs/Sn4vLjTeCjAizxgEyFhegG9HDwfYDX249KO/kIVXnOsUUBTA1u6KvsImtRTYwyA0=',
+            '+H6CB1YBAYpCSVAAAAAAAAAAAqLhikJJUAAAAAAAAACJEENWGogpMAAAik9ORUJJUAAAAACAgIABuEX4Qxug81K8K87BiQpmawv8wBT/8wJA7xexSiStKlH+ijGE+/agCOLB7aqTVi62WHw2BgRBIlYMICc3LOSqsWE6lFku3Ew=',
+            '+IaCAwQBAYpCSVAAAAAAAAAAAarpikZBTENPTgAAAACUhfwWxlBErQ8ZAvfDq2FnB0UsxeaIDeC2s6dkAACAgAG4RfhDG6C1m77cTSA1qllKv8FOW3/BaIO3lVQtrVclDUd5ay3NpaBPHg/nkVgAfN63rRKBYiNZBb+4sa4tVjSLlL2v6yVB5w==',
+            '+IMrAQGKQklQAAAAAAAAAAKp6IpCSVAAAAAAAAAAiAr2pNB8jwAAikVDT05BAAAAAACITCl3L4h8OpGAgAG4RfhDG6DX7yY6y9xkV640fWT9EMcIH/WDrPu3Y4hX9zpESaijPKBVP7Z56G2J1urB3QZq9cl7AaYbE7EZeAMWsCsidQGXvg==',
+            '+IUBAQGKQklQAAAAAAAAAAGr6opCSVAAAAAAAAAAlK/SZxtm+xqSGATRe5jj+eCa+bhmiXPriL12u+CcAICAAbhF+EMboJioZmk/kgs9vAcJcvM8VwmoRuws0s02eMT9yMqNr5s7oBk5m7YSzSIKDjRQYRjyaktm+zMQI4JluYnQVSOpbVkt'
+        ]
+
+    @staticmethod
+    def base64ToHex(b64str):
+        b64_bytes = b64str.encode()
+        tx_bytes = base64.b64decode(b64_bytes)
+
+        return tx_bytes.hex()
+
+    def test_txs(self):
+        for index, b64_tx in enumerate(self.B64_TXS):
+            try:
+                raw_tx = self.base64ToHex(b64_tx)
+                MinterTx.from_raw(raw_tx)
+            except Exception as e:
+                self.fail(f'Tx #{index} from base64 failed: {e.__str__()}')
 
 
 if __name__ == '__main__':

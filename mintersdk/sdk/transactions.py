@@ -1,7 +1,6 @@
 """
 @author: Roman Matusevich
 """
-import binascii
 import rlp
 import hashlib
 import copy
@@ -107,7 +106,7 @@ class MinterTx(object):
             signed_tx hash (str)
         """
         tx_rlp = rlp.encode(list(tx_struct.values()))
-        return binascii.hexlify(tx_rlp).decode()
+        return tx_rlp.hex()
 
     def generate_signature(self, private_key):
         """
@@ -126,7 +125,7 @@ class MinterTx(object):
 
         # Create signature
         signature = ECDSA.sign(keccak, private_key)
-        signature = binascii.hexlify(rlp.encode(signature)).decode()
+        signature = rlp.encode(signature).hex()
 
         return signature
 
@@ -193,7 +192,7 @@ class MinterTx(object):
         else:
             # Add multisig address to signature
             signature_data = [
-                MinterHelper.hex2bin(MinterHelper.prefix_remove(ms_address)),
+                bytes.fromhex(MinterHelper.prefix_remove(ms_address)),
                 []
             ]
 
@@ -222,7 +221,7 @@ class MinterTx(object):
 
         # Create SHA256
         sha = hashlib.sha256()
-        sha.update(binascii.unhexlify(self.signed_tx))
+        sha.update(bytes.fromhex(self.signed_tx))
 
         # Return first 40 symbols with prefix
         return MinterHelper.prefix_add(sha.hexdigest()[:40], PREFIX_TX)
@@ -290,45 +289,55 @@ class MinterTx(object):
             MinterTx child instance
         """
 
-        tx = rlp.decode(binascii.unhexlify(raw_tx))
+        tx = rlp.decode(bytes.fromhex(raw_tx))
+
+        # Try to decode payload
+        try:
+            payload = tx[6].decode()
+        except UnicodeDecodeError:
+            payload = tx[6]
+
+        # Try to decode service data
+        try:
+            service_data = tx[7].decode()
+        except UnicodeDecodeError:
+            service_data = tx[7]
 
         # Populate structure dict with decoded tx data
         struct = copy.copy(cls._STRUCTURE_DICT)
         struct.update({
-            'nonce': int(binascii.hexlify(tx[0]), 16),
-            'chain_id': int(binascii.hexlify(tx[1]), 16),
-            'gas_price': int(binascii.hexlify(tx[2]), 16),
+            'nonce': int.from_bytes(tx[0], 'big'),
+            'chain_id': int.from_bytes(tx[1], 'big'),
+            'gas_price': int.from_bytes(tx[2], 'big'),
             'gas_coin': tx[3].decode(),
-            'type': int(binascii.hexlify(tx[4]), 16),
-            'payload': tx[6].decode().replace(chr(0), ''),
-            'service_data': tx[7].decode().replace(chr(0), ''),
-            'signature_type': int(binascii.hexlify(tx[8]), 16)
+            'type': int.from_bytes(tx[4], 'big'),
+            'payload': payload,
+            'service_data': service_data,
+            'signature_type': int.from_bytes(tx[8], 'big')
         })
 
         # Get signature data
         signature_data = rlp.decode(tx[9])
         if struct['signature_type'] == cls.SIGNATURE_SINGLE_TYPE:
             signature_data = {
-                'v': int(binascii.hexlify(signature_data[0]), 16),
-                'r': binascii.hexlify(signature_data[1]).decode(),
-                's': binascii.hexlify(signature_data[2]).decode()
+                'v': int.from_bytes(signature_data[0], 'big'),
+                'r': signature_data[1].hex(),
+                's': signature_data[2].hex()
             }
         else:
             # Decode signatures
             signatures = []
             for signature in signature_data[1]:
                 signatures.append({
-                    'v': int(binascii.hexlify(signature[0]), 16),
-                    'r': binascii.hexlify(signature[1]).decode(),
-                    's': binascii.hexlify(signature[2]).decode()
+                    'v': int.from_bytes(signature[0], 'big'),
+                    'r': signature[1].hex(),
+                    's': signature[2].hex()
                 })
 
             # Create decoded signature data
             signature_data = {
-                'from_mx': (
-                    MinterHelper.prefix_add(
-                        MinterHelper.bin2hex(signature_data[0]), PREFIX_ADDR
-                    )
+                'from_mx': MinterHelper.prefix_add(
+                    signature_data[0].hex(), PREFIX_ADDR
                 ),
                 'signatures': signatures
             }
@@ -404,7 +413,7 @@ class MinterTx(object):
 
         # Otherwise (single signature tx), recover public key and get
         # address from public key
-        # Unhexlify (convert to bin (ascii)) all non-numeric dict values
+        # Unhexlify hexdigit dict values to bytes
         tx = MinterHelper.hex2bin_recursive(tx)
 
         # Encode tx data to RLP
@@ -415,11 +424,9 @@ class MinterTx(object):
         _keccak = MinterHelper.keccak_hash(tx_rlp)
 
         # Recover public key
-        public_key = (
-            MinterHelper.prefix_add(
-                ECDSA.recover(_keccak, tuple(signature_data.values())),
-                PREFIX_PUBKEY
-            )
+        public_key = MinterHelper.prefix_add(
+            ECDSA.recover(_keccak, tuple(signature_data.values())),
+            PREFIX_PUBKEY
         )
 
         return MinterWallet.get_address_from_public_key(public_key)
@@ -447,7 +454,7 @@ class MinterTx(object):
         # Convert signature data from verbose dict to needed list of
         # signatures
         signature_data = [
-            MinterHelper.hex2bin(
+            bytes.fromhex(
                 MinterHelper.prefix_remove(tx.signature_data['from_mx'])
             ),
             []
@@ -494,9 +501,9 @@ class MinterTx(object):
         Returns:
             signature (list[int])
         """
-        signature = binascii.unhexlify(signature)
+        signature = bytes.fromhex(signature)
         signature = rlp.decode(signature)
-        signature = [int(binascii.hexlify(item), 16) for item in signature]
+        signature = [int.from_bytes(item, 'big') for item in signature]
 
         return signature
 
@@ -566,13 +573,13 @@ class MinterBuyCoinTx(MinterTx):
                 kwargs['data']['coin_to_buy']
             ),
             'value_to_buy': MinterHelper.to_bip(
-                MinterHelper.bin2int(kwargs['data']['value_to_buy'])
+                int.from_bytes(kwargs['data']['value_to_buy'], 'big')
             ),
             'coin_to_sell': MinterHelper.decode_coin_name(
                 kwargs['data']['coin_to_sell']
             ),
             'max_value_to_sell': MinterHelper.to_bip(
-                MinterHelper.bin2int(kwargs['data']['max_value_to_sell'])
+                int.from_bytes(kwargs['data']['max_value_to_sell'], 'big')
             )
         })
 
@@ -652,14 +659,14 @@ class MinterCreateCoinTx(MinterTx):
             'name': kwargs['data']['name'].decode(),
             'symbol': MinterHelper.decode_coin_name(kwargs['data']['symbol']),
             'initial_amount': MinterHelper.to_bip(
-                MinterHelper.bin2int(kwargs['data']['initial_amount'])
+                int.from_bytes(kwargs['data']['initial_amount'], 'big')
             ),
             'initial_reserve': MinterHelper.to_bip(
-                MinterHelper.bin2int(kwargs['data']['initial_reserve'])
+                int.from_bytes(kwargs['data']['initial_reserve'], 'big')
             ),
-            'crr': MinterHelper.bin2int(kwargs['data']['crr']),
+            'crr': int.from_bytes(kwargs['data']['crr'], 'big'),
             'max_supply': MinterHelper.to_bip(
-                MinterHelper.bin2int(kwargs['data']['max_supply'])
+                int.from_bytes(kwargs['data']['max_supply'], 'big')
             )
         })
 
@@ -716,10 +723,10 @@ class MinterDeclareCandidacyTx(MinterTx):
         struct.update({
             'type': self.TYPE,
             'data': {
-                'address': MinterHelper.hex2bin(
+                'address': bytes.fromhex(
                     MinterHelper.prefix_remove(self.address)
                 ),
-                'pub_key': MinterHelper.hex2bin(
+                'pub_key': bytes.fromhex(
                     MinterHelper.prefix_remove(self.pub_key)
                 ),
                 'commission': '' if self.commission == 0 else self.commission,
@@ -740,17 +747,15 @@ class MinterDeclareCandidacyTx(MinterTx):
         # Data will be passed as additional kwarg
         kwargs['data'].update({
             'address': MinterHelper.prefix_add(
-                MinterHelper.bin2hex(kwargs['data']['address']),
-                PREFIX_ADDR
+                kwargs['data']['address'].hex(), PREFIX_ADDR
             ),
             'pub_key': MinterHelper.prefix_add(
-                MinterHelper.bin2hex(kwargs['data']['pub_key']),
-                PREFIX_PUBKEY
+                kwargs['data']['pub_key'].hex(), PREFIX_PUBKEY
             ),
-            'commission': MinterHelper.bin2int(kwargs['data']['commission']),
+            'commission': int.from_bytes(kwargs['data']['commission'], 'big'),
             'coin': MinterHelper.decode_coin_name(kwargs['data']['coin']),
             'stake': MinterHelper.to_bip(
-                MinterHelper.bin2int(kwargs['data']['stake'])
+                int.from_bytes(kwargs['data']['stake'], 'big')
             )
         })
 
@@ -795,7 +800,7 @@ class MinterDelegateTx(MinterTx):
         struct.update({
             'type': self.TYPE,
             'data': {
-                'pub_key': MinterHelper.hex2bin(
+                'pub_key': bytes.fromhex(
                     MinterHelper.prefix_remove(self.pub_key)
                 ),
                 'coin': MinterHelper.encode_coin_name(self.coin),
@@ -814,12 +819,11 @@ class MinterDelegateTx(MinterTx):
         # Data will be passed as additional kwarg
         kwargs['data'].update({
             'pub_key': MinterHelper.prefix_add(
-                MinterHelper.bin2hex(kwargs['data']['pub_key']),
-                PREFIX_PUBKEY
+                kwargs['data']['pub_key'].hex(), PREFIX_PUBKEY
             ),
             'coin': MinterHelper.decode_coin_name(kwargs['data']['coin']),
             'stake': MinterHelper.to_bip(
-                MinterHelper.bin2int(kwargs['data']['stake'])
+                int.from_bytes(kwargs['data']['stake'], 'big')
             )
         })
 
@@ -867,10 +871,8 @@ class MinterRedeemCheckTx(MinterTx):
         struct.update({
             'type': self.TYPE,
             'data': {
-                'check': MinterHelper.hex2bin(
-                    MinterHelper.prefix_remove(self.check)
-                ),
-                'proof': MinterHelper.hex2bin(self.proof)
+                'check': bytes.fromhex(MinterHelper.prefix_remove(self.check)),
+                'proof': bytes.fromhex(self.proof)
             }
         })
 
@@ -886,10 +888,9 @@ class MinterRedeemCheckTx(MinterTx):
         # Data will be passed as additional kwarg
         kwargs['data'].update({
             'check': MinterHelper.prefix_add(
-                MinterHelper.bin2hex(kwargs['data']['check']),
-                PREFIX_CHECK
+                kwargs['data']['check'].hex(), PREFIX_CHECK
             ),
-            'proof': MinterHelper.bin2hex(kwargs['data']['proof'])
+            'proof': kwargs['data']['proof'].hex()
         })
 
         # Populate data key values as kwargs
@@ -961,7 +962,7 @@ class MinterSellAllCoinTx(MinterTx):
                 kwargs['data']['coin_to_buy']
             ),
             'min_value_to_buy': MinterHelper.to_bip(
-                MinterHelper.bin2int(kwargs['data']['min_value_to_buy'])
+                int.from_bytes(kwargs['data']['min_value_to_buy'], 'big')
             )
         })
 
@@ -1036,13 +1037,13 @@ class MinterSellCoinTx(MinterTx):
                 kwargs['data']['coin_to_sell']
             ),
             'value_to_sell': MinterHelper.to_bip(
-                MinterHelper.bin2int(kwargs['data']['value_to_sell'])
+                int.from_bytes(kwargs['data']['value_to_sell'], 'big')
             ),
             'coin_to_buy': MinterHelper.decode_coin_name(
                 kwargs['data']['coin_to_buy']
             ),
             'min_value_to_buy': MinterHelper.to_bip(
-                MinterHelper.bin2int(kwargs['data']['min_value_to_buy'])
+                int.from_bytes(kwargs['data']['min_value_to_buy'], 'big')
             )
         })
 
@@ -1087,9 +1088,7 @@ class MinterSendCoinTx(MinterTx):
             'type': self.TYPE,
             'data': {
                 'coin': MinterHelper.encode_coin_name(self.coin),
-                'to': MinterHelper.hex2bin(
-                    MinterHelper.prefix_remove(self.to)
-                ),
+                'to': bytes.fromhex(MinterHelper.prefix_remove(self.to)),
                 'value': MinterHelper.to_pip(self.value)
             }
         })
@@ -1107,10 +1106,10 @@ class MinterSendCoinTx(MinterTx):
         kwargs['data'].update({
             'coin': MinterHelper.decode_coin_name(kwargs['data']['coin']),
             'to': MinterHelper.prefix_add(
-                MinterHelper.bin2hex(kwargs['data']['to']), PREFIX_ADDR
+                kwargs['data']['to'].hex(), PREFIX_ADDR
             ),
             'value': MinterHelper.to_bip(
-                MinterHelper.bin2int(kwargs['data']['value'])
+                int.from_bytes(kwargs['data']['value'], 'big')
             )
         })
 
@@ -1177,7 +1176,7 @@ class MinterMultiSendCoinTx(MinterTx):
         for item in self.txs:
             struct['data']['txs'].append([
                 MinterHelper.encode_coin_name(item['coin'].upper()),
-                MinterHelper.hex2bin(MinterHelper.prefix_remove(item['to'])),
+                bytes.fromhex(MinterHelper.prefix_remove(item['to'])),
                 MinterHelper.to_pip(item['value'])
             ])
 
@@ -1194,10 +1193,8 @@ class MinterMultiSendCoinTx(MinterTx):
         for index, item in enumerate(kwargs['data']['txs']):
             kwargs['data']['txs'][index] = {
                 'coin': MinterHelper.decode_coin_name(item[0]),
-                'to': MinterHelper.prefix_add(
-                    MinterHelper.bin2hex(item[1]), PREFIX_ADDR
-                ),
-                'value': MinterHelper.to_pip(MinterHelper.bin2int(item[2]))
+                'to': MinterHelper.prefix_add(item[1].hex(), PREFIX_ADDR),
+                'value': MinterHelper.to_pip(int.from_bytes(item[2], 'big'))
             }
 
         # Populate data key values as kwargs
@@ -1242,7 +1239,7 @@ class MinterSetCandidateOffTx(MinterTx):
         struct.update({
             'type': self.TYPE,
             'data': {
-                'pub_key': MinterHelper.hex2bin(
+                'pub_key': bytes.fromhex(
                     MinterHelper.prefix_remove(self.pub_key)
                 )
             }
@@ -1260,8 +1257,7 @@ class MinterSetCandidateOffTx(MinterTx):
         # Data will be passed as additional kwarg
         kwargs['data'].update({
             'pub_key': MinterHelper.prefix_add(
-                MinterHelper.bin2hex(kwargs['data']['pub_key']),
-                PREFIX_PUBKEY
+                kwargs['data']['pub_key'].hex(), PREFIX_PUBKEY
             )
         })
 
@@ -1305,7 +1301,7 @@ class MinterSetCandidateOnTx(MinterTx):
         struct.update({
             'type': self.TYPE,
             'data': {
-                'pub_key': MinterHelper.hex2bin(
+                'pub_key': bytes.fromhex(
                     MinterHelper.prefix_remove(self.pub_key)
                 )
             }
@@ -1323,8 +1319,7 @@ class MinterSetCandidateOnTx(MinterTx):
         # Data will be passed as additional kwarg
         kwargs['data'].update({
             'pub_key': MinterHelper.prefix_add(
-                MinterHelper.bin2hex(kwargs['data']['pub_key']),
-                PREFIX_PUBKEY
+                kwargs['data']['pub_key'].hex(), PREFIX_PUBKEY
             )
         })
 
@@ -1372,7 +1367,7 @@ class MinterUnbondTx(MinterTx):
         struct.update({
             'type': self.TYPE,
             'data': {
-                'pub_key': MinterHelper.hex2bin(
+                'pub_key': bytes.fromhex(
                     MinterHelper.prefix_remove(self.pub_key)
                 ),
                 'coin': MinterHelper.encode_coin_name(self.coin),
@@ -1392,12 +1387,11 @@ class MinterUnbondTx(MinterTx):
         # Data will be passed as additional kwarg
         kwargs['data'].update({
             'pub_key': MinterHelper.prefix_add(
-                MinterHelper.bin2hex(kwargs['data']['pub_key']),
-                PREFIX_PUBKEY
+                kwargs['data']['pub_key'].hex(), PREFIX_PUBKEY
             ),
             'coin': MinterHelper.decode_coin_name(kwargs['data']['coin']),
             'value': MinterHelper.to_bip(
-                MinterHelper.bin2int(kwargs['data']['value'])
+                int.from_bytes(kwargs['data']['value'], 'big')
             )
         })
 
@@ -1447,13 +1441,13 @@ class MinterEditCandidateTx(MinterTx):
         struct.update({
             'type': self.TYPE,
             'data': {
-                'pub_key': MinterHelper.hex2bin(
+                'pub_key': bytes.fromhex(
                     MinterHelper.prefix_remove(self.pub_key)
                 ),
-                'reward_address': MinterHelper.hex2bin(
+                'reward_address': bytes.fromhex(
                     MinterHelper.prefix_remove(self.reward_address)
                 ),
-                'owner_address': MinterHelper.hex2bin(
+                'owner_address': bytes.fromhex(
                     MinterHelper.prefix_remove(self.owner_address)
                 )
             }
@@ -1471,16 +1465,13 @@ class MinterEditCandidateTx(MinterTx):
         # Data will be passed as additional kwarg
         kwargs['data'].update({
             'pub_key': MinterHelper.prefix_add(
-                MinterHelper.bin2hex(kwargs['data']['pub_key']),
-                PREFIX_PUBKEY
+                kwargs['data']['pub_key'].hex(), PREFIX_PUBKEY
             ),
             'reward_address': MinterHelper.prefix_add(
-                MinterHelper.bin2hex(kwargs['data']['reward_address']),
-                PREFIX_ADDR
+                kwargs['data']['reward_address'].hex(), PREFIX_ADDR
             ),
             'owner_address': MinterHelper.prefix_add(
-                MinterHelper.bin2hex(kwargs['data']['owner_address']),
-                PREFIX_ADDR
+                kwargs['data']['owner_address'].hex(), PREFIX_ADDR
             )
         })
 
