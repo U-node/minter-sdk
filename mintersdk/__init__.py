@@ -1,7 +1,6 @@
 import os
 import random
 import decimal
-import binascii
 import string
 import hashlib
 import sha3
@@ -115,17 +114,14 @@ class MinterHelper:
         return khash.hexdigest()
 
     @staticmethod
+    @deprecated('Unnecessary method')
     def hex2bin(string):
-        return binascii.unhexlify(string)
+        return bytes.fromhex(string)
 
     @classmethod
     def hex2bin_recursive(cls, _dict):
         """
-        hex2bin part - analog of PHP hex2bin.
-        (The hex2bin() function converts a string of hexadecimal
-        values to ASCII characters.)
-        In Python it can be done by binascii.unhexlify().
-        Recursive hex2bin for dict.
+        Recursively convert hexdigit dict values to bytes.
         Args:
             _dict (dict)
         Returns:
@@ -144,17 +140,22 @@ class MinterHelper:
             if type(v) == dict:
                 cls.hex2bin_recursive(v)
             elif type(v) == str and ctype_xdigit(v):
-                _dict[k] = binascii.unhexlify(v)
+                try:
+                    _dict[k] = bytes.fromhex(v)
+                except ValueError:
+                    pass
 
         return _dict
 
     @staticmethod
+    @deprecated('Unnecessary method')
     def bin2hex(bts):
-        return binascii.hexlify(bts).decode()
+        return bts.hex()
 
     @staticmethod
+    @deprecated('Unnecessary method')
     def bin2int(number):
-        return int(binascii.hexlify(number), 16)
+        return int.from_bytes(number, 'big')
 
     @staticmethod
     def get_validator_address(pub_key, upper=True):
@@ -168,10 +169,7 @@ class MinterHelper:
             string, validator address
         """
 
-        pub_key = binascii.unhexlify(
-            MinterHelper.remove_prefix(pub_key, PREFIX_PUBKEY)
-        )
-
+        pub_key = bytes.fromhex(MinterHelper.prefix_remove(pub_key))
         vaddress = hashlib.sha256(pub_key).hexdigest()[:40]
 
         return vaddress.upper() if upper else vaddress
@@ -246,8 +244,16 @@ class MinterHelper:
 
     @staticmethod
     def bytes_len(value, encoding='utf-8'):
-        """ Count string bytes length """
-        return len(bytes(value, encoding=encoding))
+        """
+        Count string bytes length
+        Args:
+            value (str|bytes)
+            encoding (str)
+        """
+        if type(value) is str:
+            value = bytes(value, encoding=encoding)
+
+        return len(value)
 
     @staticmethod
     def encode_coin_name(symbol):

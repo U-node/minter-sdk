@@ -1,4 +1,5 @@
 import unittest
+import base64
 
 from mintersdk.sdk.transactions import (
     MinterTx, MinterDelegateTx, MinterSendCoinTx, MinterBuyCoinTx,
@@ -765,6 +766,61 @@ class TestMinterSendMultisigTx(unittest.TestCase):
 
         self.TX.sign(private_key=self.PRIVATE_KEYS[0], signature=signatures[1:], ms_address=self.FROM)
         self.assertEqual(self.TX.signed_tx, self.SIGNED_TX)
+
+
+class TestPayloadsFromRaw(unittest.TestCase):
+    def setUp(self):
+        self.TO = 'Mxd82558ea00eb81d35f2654953598f5d51737d31d'
+        self.FROM = 'Mx31e61a05adbd13c6b625262704bc305bf7725026'
+        self.PK = '07bc17abdcee8b971bb8723e36fe9d2523306d5ab2d683631693238e0f9df142'
+        self.TX = MinterSendCoinTx(
+            nonce=1, gas_coin='mnt', to=self.TO, coin='mnt', value=1
+        )
+        self.TX_DECODED = None
+
+    def sign_and_decode(self, payload):
+        self.TX.payload = payload
+        self.TX.sign(private_key=self.PK)
+        self.TX_DECODED = MinterTx.from_raw(self.TX.signed_tx)
+
+    def test_hex_like(self):
+        payload = 'fff'
+        self.sign_and_decode(payload)
+
+        self.assertEqual(payload, self.TX_DECODED.payload)
+        self.assertEqual(self.FROM, self.TX_DECODED.from_mx)
+
+    def test_str_bytes(self):
+        payload = '🔳'
+        self.sign_and_decode(payload)
+
+        self.assertEqual(payload, self.TX_DECODED.payload)
+        self.assertEqual(self.FROM, self.TX_DECODED.from_mx)
+
+    def test_raw_bytes(self):
+        payload = b'\xff\xff\xff'
+        self.sign_and_decode(payload)
+
+        self.assertEqual(payload, self.TX_DECODED.payload)
+        self.assertEqual(self.FROM, self.TX_DECODED.from_mx)
+
+
+class TestBase64FromRaw(unittest.TestCase):
+    def setUp(self):
+        pass
+
+    @staticmethod
+    def base64ToHex(b64str):
+        b64_bytes = b64str.encode()
+        tx_bytes = base64.b64decode(b64_bytes)
+
+        return tx_bytes.hex()
+
+    def test_1(self):
+        b64_tx = '+Hw8AQGKQklQAAAAAAAAAAKi4YpPTEJJVFgAAAAAiQHluPqP4qwAAIpMRU1PTgAAAAAAgICAAbhF+EMboPtT5w1Brh5BO66qs75e1sOj9Ka4KfxGQDOFsQssgNn/oAeDnTkaMj685tdWvWa6rUmViaCB+KerPBDHUE7O731j'
+        raw_tx = self.base64ToHex(b64_tx)
+
+        tx = MinterTx.from_raw(raw_tx)
 
 
 if __name__ == '__main__':

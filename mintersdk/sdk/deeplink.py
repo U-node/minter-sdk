@@ -1,8 +1,6 @@
 """
 @author: Roman Matusevich
 """
-import binascii
-
 import rlp
 from mintersdk import MinterHelper
 
@@ -55,15 +53,14 @@ class MinterDeeplink(object):
                           self.gas_price, gas_coin]
 
         # Create deeplink hash (`d` URL param)
-        deephash = rlp.encode(deep_structure)
-        deephash = binascii.hexlify(deephash).decode()
+        deephash = rlp.encode(deep_structure).hex()
 
         # Create deeplink URL
         deeplink = self.base_url + '?d=' + deephash
 
         # If password check needed, add (`p` URL param)
         if password:
-            password = binascii.hexlify(rlp.encode(password)).decode()
+            password = rlp.encode(password).hex()
             deeplink += '&p=' + password
 
         return deeplink

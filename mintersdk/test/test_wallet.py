@@ -12,10 +12,8 @@ class TestMinterWallet(unittest.TestCase):
 
     def test_private_key(self):
         wallet = MinterWallet.create(mnemonic=self.mnemonic)
-
         self.assertEqual(wallet['private_key'], self.private_key)
 
     def test_address(self):
         wallet = MinterWallet.create(mnemonic=self.mnemonic)
-
         self.assertEqual(wallet['address'], self.address)

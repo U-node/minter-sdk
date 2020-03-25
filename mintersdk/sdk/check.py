@@ -1,7 +1,6 @@
 """
 @author: Roman Matusevich
 """
-import binascii
 import hashlib
 
 import rlp
@@ -66,7 +65,7 @@ class MinterCheck(object):
         v = '00' if v == 27 else '01'
         signature = format(r, 'x').zfill(64) + format(s, 'x').zfill(64) + v
 
-        return MinterHelper.hex2bin(signature)
+        return bytes.fromhex(signature)
 
     def sign(self, private_key):
         """
@@ -83,7 +82,7 @@ class MinterCheck(object):
         # lock, v, r, s.
         # lock, v, r, s appended later in code
         structure = [
-            int(binascii.hexlify(str(self.nonce).encode()), 16),
+            int(str(self.nonce).encode().hex(), 16),
             self.chain_id,
             self.due_block,
             MinterHelper.encode_coin_name(self.coin),
@@ -118,9 +117,9 @@ class MinterCheck(object):
         structure += signature
 
         # Get RLP, which will be the check
-        check = binascii.hexlify(rlp.encode(structure))
+        check = rlp.encode(structure).hex()
 
-        return MinterHelper.prefix_add(check.decode(), PREFIX_CHECK)
+        return MinterHelper.prefix_add(check, PREFIX_CHECK)
 
     @classmethod
     def proof(cls, address, passphrase):
@@ -135,7 +134,7 @@ class MinterCheck(object):
 
         # Get address hash
         address = MinterHelper.prefix_remove(address)
-        address = MinterHelper.hex2bin(address)
+        address = bytes.fromhex(address)
         address_hash = cls.__hash(data=[address])
 
         # Create SHA256 from passphrase
@@ -146,7 +145,7 @@ class MinterCheck(object):
         # Get signature
         signature = ECDSA.sign(message=address_hash, private_key=passphrase)
 
-        return binascii.hexlify(cls.__lockfromsignature(signature)).decode()
+        return cls.__lockfromsignature(signature).hex()
 
     @classmethod
     def from_raw(cls, rawcheck):
@@ -160,37 +159,37 @@ class MinterCheck(object):
 
         # Remove check prefix and RLP decode it
         rawcheck = MinterHelper.prefix_remove(rawcheck)
-        rawcheck = binascii.unhexlify(rawcheck)
+        rawcheck = bytes.fromhex(rawcheck)
         decoded = rlp.decode(rawcheck)
 
         # Create MinterCheck instance
         kwargs = {
             'nonce': int(decoded[0].decode()),
-            'chain_id': MinterHelper.bin2int(decoded[1]),
-            'due_block': MinterHelper.bin2int(decoded[2]),
+            'chain_id': int.from_bytes(decoded[1], 'big'),
+            'due_block': int.from_bytes(decoded[2], 'big'),
             'coin': MinterHelper.decode_coin_name(decoded[3]),
-            'value': MinterHelper.to_bip(MinterHelper.bin2int(decoded[4])),
+            'value': MinterHelper.to_bip(int.from_bytes(decoded[4], 'big')),
             'gas_coin': MinterHelper.decode_coin_name(decoded[5]),
-            'lock': binascii.hexlify(decoded[6]).decode(),
+            'lock': decoded[6].hex(),
             'signature': {
-                'v': MinterHelper.bin2int(decoded[7]),
-                'r': MinterHelper.bin2hex(decoded[8]),
-                's': MinterHelper.bin2hex(decoded[9])
+                'v': int.from_bytes(decoded[7], 'big'),
+                'r': decoded[8].hex(),
+                's': decoded[9].hex()
             }
         }
         check = MinterCheck(**kwargs)
 
         # Recover owner address
         msg_hash = cls.__hash(data=[
-            int(binascii.hexlify(str(check.nonce).encode()), 16),
+            int(str(check.nonce).encode().hex(), 16),
             check.chain_id,
             check.due_block,
             MinterHelper.encode_coin_name(check.coin),
             MinterHelper.to_pip(check.value),
             MinterHelper.encode_coin_name(check.gas_coin),
-            MinterHelper.hex2bin(check.lock)
+            bytes.fromhex(check.lock)
         ])
-        public_key = ECDSA.recover(msg_hash, list(check.signature.values()))
+        public_key = ECDSA.recover(msg_hash, tuple(check.signature.values()))
         public_key = MinterHelper.prefix_add(public_key, PREFIX_PUBKEY)
 
         check.owner = MinterWallet.get_address_from_public_key(public_key)

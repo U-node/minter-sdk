@@ -1,7 +1,6 @@
 """
 @author: Roman Matusevich
 """
-import binascii
 import hashlib
 
 import hmac
@@ -49,8 +48,8 @@ class MinterWallet(object):
         _I = hmac.new(cls.MASTER_SEED, seed, hashlib.sha512).hexdigest()
 
         master_key = HDPrivateKey(
-            key=int.from_bytes(binascii.unhexlify(_I[:64]), 'big'),
-            chain_code=binascii.unhexlify(_I[64:]),
+            key=int.from_bytes(bytes.fromhex(_I[:64]), 'big'),
+            chain_code=bytes.fromhex(_I[64:]),
             index=0,
             depth=0
         )
@@ -59,7 +58,7 @@ class MinterWallet(object):
         keys = HDKey.from_path(master_key, cls.BIP44_SEED_ADDRESS_PATH)
 
         # Get private key
-        private_key = binascii.hexlify(bytes(keys[-1]._key))
+        private_key = keys[-1]._key.to_hex()
 
         # Get public key
         public_key = cls.get_public_from_private(private_key)
@@ -69,9 +68,9 @@ class MinterWallet(object):
 
         return {
             'address': address,
-            'private_key': private_key.decode(),
+            'private_key': private_key,
             'mnemonic': mnemonic,
-            'seed': binascii.hexlify(seed).decode()
+            'seed': seed.hex()
         }
 
     @classmethod
@@ -79,17 +78,14 @@ class MinterWallet(object):
         """
         Get public key from private key
         Args:
-            private_key (bytes): hex bytes of private key
+            private_key (str): hex bytes of private key
         Returns:
             str
         """
-
-        public_key = bitcoin_curve.public_key(
-            int.from_bytes(binascii.unhexlify(private_key), 'big')
-        )
+        public_key = bitcoin_curve.public_key(int(private_key, 16))
 
         return MinterHelper.prefix_add(
-            binascii.hexlify(bytes(public_key)).decode()[2:], PREFIX_PUBKEY
+            bytes(public_key).hex()[2:], PREFIX_PUBKEY
         )
 
     @classmethod
@@ -102,7 +98,7 @@ class MinterWallet(object):
         """
         # Create keccak hash
         _keccak = MinterHelper.keccak_hash(
-            binascii.unhexlify(MinterHelper.prefix_remove(public_key))
+            bytes.fromhex(MinterHelper.prefix_remove(public_key))
         )
 
         return MinterHelper.prefix_add(_keccak[-40:], PREFIX_ADDR)
