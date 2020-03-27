@@ -1,6 +1,8 @@
 """
 @author: Roman Matusevich
 """
+import base64
+
 import rlp
 from mintersdk import MinterHelper
 
@@ -14,7 +16,7 @@ class MinterDeeplink(object):
         """
         Create deeplink object
         Args:
-            tx (object): MinterTx object
+            tx (MinterTx): MinterTx object
             data_only (bool): Generate deeplink only with tx data
             base_url (str): Base URL for generated deeplink
         """
@@ -52,15 +54,20 @@ class MinterDeeplink(object):
         deep_structure = [self.__type, self.__data, self.payload, self.nonce,
                           self.gas_price, gas_coin]
 
-        # Create deeplink hash (`d` URL param)
-        deephash = rlp.encode(deep_structure).hex()
+        # Create deephash base64 urlsafe
+        deephash = rlp.encode(deep_structure)
+        deephash = base64.urlsafe_b64encode(deephash)
+        deephash = deephash.decode().rstrip('=')
 
         # Create deeplink URL
-        deeplink = self.base_url + '?d=' + deephash
+        deeplink = self.base_url + '/' + deephash
 
         # If password check needed, add (`p` URL param)
         if password:
-            password = rlp.encode(password).hex()
-            deeplink += '&p=' + password
+            password = password.encode().hex()
+            password = base64.urlsafe_b64encode(password.encode())
+            password = password.decode().rstrip('=')
+
+            deeplink += '?p=' + password
 
         return deeplink
