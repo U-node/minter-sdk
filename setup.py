@@ -6,7 +6,7 @@ with codecs.open("README.md", "r", 'utf_8_sig') as fh:
 
 setuptools.setup(
     name="minter-sdk",
-    version="1.0.26",
+    version="1.0.27",
     author="U-node Team",
     author_email="rymka1989@gmail.com",
     description=u"Python SDK for Minter Network",
@@ -22,9 +22,8 @@ setuptools.setup(
     ),
     install_requires=[
         'rlp',
-        'bitcoin',
+        'sslcrypto',
         'mnemonic',
-        'base58',
         'pysha3',
         'requests',
         'pyqrcode',
