@@ -140,14 +140,8 @@ class MinterWallet(object):
         if index < 0 or index > 0xffffffff:
             raise ValueError("index is out of range: 0 <= index <= 2**32 - 1")
 
-        # Get curve n. Check for 'order (n)' attribute for openssl backend,
-        # otherwise get 'n' attribute.
-        try:
-            curve_n = int(cls.curve._backend.order)
-        except AttributeError:
-            curve_n = cls.curve._backend.n
-        except Exception:
-            raise
+        # Get curve n parameter.
+        curve_n = int(cls.curve.params['n'])
 
         # Unpack parent key
         parent_key, hmac_key = parent_key
