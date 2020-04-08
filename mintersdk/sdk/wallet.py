@@ -143,7 +143,7 @@ class MinterWallet(object):
         # Get curve n. Check for 'order (n)' attribute for openssl backend,
         # otherwise get 'n' attribute.
         try:
-            curve_n = cls.curve._backend.order
+            curve_n = int(cls.curve._backend.order)
         except AttributeError:
             curve_n = cls.curve._backend.n
         except Exception:
