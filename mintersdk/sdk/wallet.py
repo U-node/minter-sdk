@@ -140,6 +140,15 @@ class MinterWallet(object):
         if index < 0 or index > 0xffffffff:
             raise ValueError("index is out of range: 0 <= index <= 2**32 - 1")
 
+        # Get curve n. Check for 'order (n)' attribute for openssl backend,
+        # otherwise get 'n' attribute.
+        try:
+            curve_n = cls.curve._backend.order
+        except AttributeError:
+            curve_n = cls.curve._backend.n
+        except Exception:
+            raise
+
         # Unpack parent key
         parent_key, hmac_key = parent_key
 
@@ -167,10 +176,10 @@ class MinterWallet(object):
         Il, Ir = I[:32], I[32:]
 
         parse_Il = int.from_bytes(Il, 'big')
-        if parse_Il >= cls.curve._backend.n:
+        if parse_Il >= curve_n:
             return None
 
-        child_key = (parse_Il + parent_key) % cls.curve._backend.n
+        child_key = (parse_Il + parent_key) % curve_n
         if child_key == 0:
             # Incredibly unlucky choice
             return None
