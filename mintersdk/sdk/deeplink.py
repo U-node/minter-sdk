@@ -64,7 +64,6 @@ class MinterDeeplink(object):
 
         # If password check needed, add (`p` URL param)
         if password:
-            password = password.encode().hex()
             password = base64.urlsafe_b64encode(password.encode())
             password = password.decode().rstrip('=')
 
