@@ -288,7 +288,7 @@ class MinterHelper:
             Decimal(0.1) = Decimal('0.10000000000004524352345234')
             Decimal('0.1') = Decimal('0.1')
         Args:
-            value (str|float|int): value in BIP
+            value (str|float|int|Decimal): value in BIP
         Returns:
             int
         """
@@ -300,21 +300,20 @@ class MinterHelper:
         Convert PIPs to BIPs.
         Use dynamic Decimal precision, depending on value length.
         Args:
-            value (int|str): value in PIP
+            value (int|str|Decimal): value in PIP
         Returns:
             Decimal
         """
         # Check if value is correct PIP value
-        if type(value) not in [int, str]:
-            raise ValueError(f"{value} should be 'int' or 'str of digits'")
-        if type(value) is str and not value.isdigit():
+        value = str(value)
+        if not value.isdigit():
             raise ValueError(f'{value} is not correct PIP value')
 
         # Get default decimal context
         context = decimal.getcontext()
         # Set temporary decimal context for calculation
         decimal.setcontext(
-            decimal.Context(prec=len(str(value)), rounding=decimal.ROUND_DOWN)
+            decimal.Context(prec=len(value), rounding=decimal.ROUND_DOWN)
         )
 
         # Convert value
