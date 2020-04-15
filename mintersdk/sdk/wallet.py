@@ -58,7 +58,7 @@ class MinterWallet(object):
         )
 
         # Get private key
-        private_key = format(keys[-1][0], '0x')
+        private_key = keys[-1][0].to_bytes(length=32, byteorder='big').hex()
         # Get public key from private
         public_key = cls.get_public_from_private(private_key)
         # Get address from public key
