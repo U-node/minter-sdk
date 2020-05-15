@@ -80,6 +80,13 @@ class MinterTx(object):
         for name, value in kwargs.items():
             setattr(self, name, value)
 
+        self.validate_attrs()
+
+    def validate_attrs(self):
+        """ Validate init arguments """
+        if type(self.nonce) is not int:
+            raise ValueError(f"'nonce' should be 'int'")
+
     def generate_tx_rlp(self):
         """
         Create structure from instance and prepare rlp structure
@@ -223,8 +230,8 @@ class MinterTx(object):
         sha = hashlib.sha256()
         sha.update(bytes.fromhex(self.signed_tx))
 
-        # Return first 40 symbols with prefix
-        return MinterHelper.prefix_add(sha.hexdigest()[:40], PREFIX_TX)
+        # Return first 64 symbols with prefix
+        return MinterHelper.prefix_add(sha.hexdigest()[:64], PREFIX_TX)
 
     def _structure_from_instance(self):
         """
@@ -371,6 +378,8 @@ class MinterTx(object):
             _class = MinterEditCandidateTx
         elif struct['type'] == MinterMultiSendCoinTx.TYPE:
             _class = MinterMultiSendCoinTx
+        elif struct['type'] == MinterCreateMultisigTx.TYPE:
+            _class = MinterCreateMultisigTx
         else:
             raise Exception('Undefined tx type.')
 
@@ -1194,7 +1203,7 @@ class MinterMultiSendCoinTx(MinterTx):
             kwargs['data']['txs'][index] = {
                 'coin': MinterHelper.decode_coin_name(item[0]),
                 'to': MinterHelper.prefix_add(item[1].hex(), PREFIX_ADDR),
-                'value': MinterHelper.to_pip(int.from_bytes(item[2], 'big'))
+                'value': MinterHelper.to_bip(int.from_bytes(item[2], 'big'))
             }
 
         # Populate data key values as kwargs
@@ -1487,4 +1496,99 @@ class MinterEditCandidateTx(MinterTx):
             'pub_key': raw_data[0],
             'reward_address': raw_data[1],
             'owner_address': raw_data[2]
+        }
+
+
+class MinterCreateMultisigTx(MinterTx):
+    """ Create multi signature address transaction """
+    # Type of transaction
+    TYPE = 12
+
+    # Fee units
+    COMMISSION = 100
+
+    def __init__(self, threshold, weights, addresses, **kwargs):
+        """
+        Args:
+            threshold (int): Address threshold
+            weights (list(int)): List ow weights
+            addresses (list(str)): List of addresses
+            **kwargs: MinterTx kwargs
+        """
+        self.threshold = threshold
+        self.weights = weights
+        self.addresses = addresses
+
+        super(MinterCreateMultisigTx, self).__init__(**kwargs)
+
+    def validate_attrs(self):
+        """ Overloaded to validate custom attrs """
+        super(MinterCreateMultisigTx, self).validate_attrs()
+
+        if type(self.threshold) is not int:
+            raise ValueError("'threshold' should be 'int'")
+
+        if type(self.weights) not in (list, tuple) or \
+                1 > len(self.weights) > 32 or \
+                any(type(w) is not int for w in self.weights) or \
+                any(w > 1023 for w in self.weights):
+            raise ValueError(
+                "'weights' should be a list of max 32 integers "
+                "with max 1023 value"
+            )
+
+        if type(self.addresses) not in (list, tuple) or \
+                1 > len(self.addresses) > 32 or \
+                any(type(a) is not str for a in self.addresses):
+            raise ValueError("'addresses' should be a list of max 32 strings")
+
+        if len(self.weights) != len(self.addresses):
+            raise ValueError("'weights' and 'addresses' have different length")
+
+    def _structure_from_instance(self):
+        """ Override parent method to add tx special data. """
+        struct = super()._structure_from_instance()
+        struct.update({
+            'type': self.TYPE,
+            'data': {
+                'threshold': self.threshold if self.threshold else '',
+                'weights': [w if w else '' for w in self.weights],
+                'addresses': [
+                    bytes.fromhex(MinterHelper.prefix_remove(address))
+                    for address in self.addresses
+                ]
+            }
+        })
+
+        return struct
+
+    @classmethod
+    def _structure_to_kwargs(cls, structure):
+        """ Prepare decoded structure data to instance kwargs. """
+        kwargs = super()._structure_to_kwargs(structure)
+
+        # Convert data values to verbose.
+        # Data will be passed as additional kwarg
+        kwargs['data'].update({
+            'threshold': int.from_bytes(kwargs['data']['threshold'], 'big'),
+            'weights': [
+                int.from_bytes(w, 'big') for w in kwargs['data']['weights']
+            ],
+            'addresses': [
+                MinterHelper.prefix_add(address.hex(), PREFIX_ADDR)
+                for address in kwargs['data']['addresses']
+            ]
+        })
+
+        # Populate data key values as kwargs
+        kwargs.update(kwargs['data'])
+
+        return kwargs
+
+    @classmethod
+    def _data_from_raw(cls, raw_data):
+        return {
+            'threshold': raw_data[0],
+            'weights': raw_data[1],
+            'addresses': raw_data[2]
         }

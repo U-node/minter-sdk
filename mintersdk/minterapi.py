@@ -3,6 +3,7 @@
 """
 import requests
 import json
+import base64
 
 from deprecated import deprecated
 from mintersdk import MinterHelper
@@ -143,21 +144,29 @@ class MinterAPI(object):
             command='send_transaction', params={'tx': '0x' + tx}
         )
 
-    def get_transaction(self, tx_hash, pip2bip=False):
+    def get_transaction(self, tx_hash, pip2bip=False, decode_payload=False):
         """
         Get transaction info
         Args:
             tx_hash (string): transaction hash
             pip2bip (bool): Convert coin amounts to BIP (default is in PIP)
+            decode_payload (bool): Try to decode payload from base64
         """
         response = self._request(
             command='transaction', params={'hash': '0x' + tx_hash}
         )
 
+        # Convert PIPs to BIPs
         if pip2bip:
-            return self.__response_processor(
+            response = self.__response_processor(
                 data=response,
                 funcs=[(self.__pip_to_bip, {'exclude': ['commission']})]
+            )
+
+        # Decode payload
+        if decode_payload:
+            response['result']['payload'] = self._decode_payload(
+                payload=response['result']['payload']
             )
 
         return response
@@ -391,7 +400,8 @@ class MinterAPI(object):
 
         return response
 
-    def get_transactions(self, query, page=None, limit=None, pip2bip=False):
+    def get_transactions(self, query, page=None, limit=None, pip2bip=False,
+                         decode_payload=False):
         """
         Get transactions by query.
         Args:
@@ -399,16 +409,23 @@ class MinterAPI(object):
             page (int)
             limit (int)
             pip2bip (bool): Convert coin amounts to BIP (default is in PIP)
+            decode_payload (bool): Try to decode payload
         """
         response = self._request(
             command='transactions',
             params={'query': query, 'page': page, 'perPage': limit}
         )
 
+        # Convert PIPs to BIPs
         if pip2bip:
-            return self.__response_processor(
+            response = self.__response_processor(
                 data=response, funcs=[self.__pip_to_bip]
             )
+
+        # Decode payload
+        if decode_payload:
+            for item in response['result']:
+                item['payload'] = self._decode_payload(payload=item['payload'])
 
         return response
 
@@ -626,3 +643,19 @@ class MinterAPI(object):
             data['result'] = data_recursive(result=data['result'], fn=func)
 
         return data
+
+    @staticmethod
+    def _decode_payload(payload):
+        """ Decode payload from base64 and try get string """
+        if payload:
+            try:
+                payload = base64.b64decode(payload)
+            except Exception:
+                return payload
+
+            try:
+                return payload.decode()
+            except Exception:
+                return payload
+
+        return payload
