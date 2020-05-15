@@ -80,10 +80,10 @@ Values are `Decimal` type after conversion.
 - `get_status()`  
   Returns node status info.
   
-- `get_transaction(tx_hash, pip2bip=False)`  
+- `get_transaction(tx_hash, pip2bip=False, decode_payload=False)`  
   Returns transaction info.
   
-- `get_transactions(query, page=None, limit=None, pip2bip=False)`  
+- `get_transactions(query, page=None, limit=None, pip2bip=False, decode_payload=False)`  
   Return transactions by query.
   
 - `get_unconfirmed_transactions(limit=None)`  
@@ -206,6 +206,12 @@ All coin symbols are case insensitive, e.g. you can pass `gas_coin='BIP'` or `ga
   ```python
   from mintersdk.sdk.transactions import MinterEditCandidateTx
   tx = MinterEditCandidateTx(pub_key='Mp...', reward_address='Mx...', owner_address='Mx...', nonce=1, gas_coin='SYMBOL')
+  ```
+  
+- MinterCreateMultisigTx
+  ```python
+  from mintersdk.sdk.transactions import MinterCreateMultisigTx
+  tx = MinterCreateMultisigTx(threshold=5, weights=[1, 2, 3], addresses=['Mx...', 'Mx...', 'Mx...'], nonce=1, gas_coin='SYMBOL')
   ```
 
 

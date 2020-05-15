@@ -1,12 +1,13 @@
 import unittest
 import base64
+import decimal
 
 from mintersdk.sdk.transactions import (
     MinterTx, MinterDelegateTx, MinterSendCoinTx, MinterBuyCoinTx,
     MinterCreateCoinTx, MinterDeclareCandidacyTx, MinterEditCandidateTx,
     MinterRedeemCheckTx, MinterSellAllCoinTx, MinterSellCoinTx,
     MinterSetCandidateOffTx, MinterSetCandidateOnTx, MinterUnbondTx,
-    MinterMultiSendCoinTx
+    MinterMultiSendCoinTx, MinterCreateMultisigTx
 )
 
 
@@ -599,12 +600,12 @@ class TestMinterMultiSendCoinTx(unittest.TestCase):
                 {
                     'coin': 'MNT',
                     'to': 'Mxfe60014a6e9ac91618f5d1cab3fd58cded61ee99',
-                    'value': 0.1
+                    'value': decimal.Decimal('0.1')
                 },
                 {
                     'coin': 'MNT',
                     'to': 'Mxddab6281766ad86497741ff91b6b48fe85012e3c',
-                    'value': 0.2
+                    'value': decimal.Decimal('0.2')
                 }
             ]
         })
@@ -628,6 +629,7 @@ class TestMinterMultiSendCoinTx(unittest.TestCase):
         tx = MinterTx.from_raw(raw_tx=self.SIGNED_TX)
 
         self.assertEqual(tx.from_mx, self.FROM)
+        self.assertEqual(tx.txs, self.TX.txs)
 
     def test_sign_with_signature(self):
         self.TX.signature_type = MinterTx.SIGNATURE_SINGLE_TYPE
@@ -844,6 +846,55 @@ class TestFromBase64(unittest.TestCase):
                 MinterTx.from_raw(raw_tx)
             except Exception as e:
                 self.fail(f'Tx #{index} from base64 failed: {e.__str__()}')
+
+
+class TestMinterCreateMultisigTx(unittest.TestCase):
+
+    def setUp(self):
+        self.FROM = 'Mx3e4d56e776ff42c023b1ec99a7486b592a654981'
+        self.PRIVATE_KEY = 'bc3503cae8c8561df5eadc4a9eda21d32c252a6c94cfae55b5310bf6085c8582'
+        self.SIGNED_TX = 'f8a30102018a4d4e54000000000000000cb848f84607c3010305f83f94ee81347211c72524338f9680072af9074433314394ee81347211c72524338f9680072af9074433314594ee81347211c72524338f9680072af90744333144808001b845f8431ca094eb41d39e6782f5539615cc66da7073d4283893f0b3ee2b2f36aee1eaeb7c57a037f90ffdb45eb9b6f4cf301b48e73a6a81df8182e605b656a52057537d264ab4'
+        self.TX = MinterCreateMultisigTx(**{
+            'nonce': 1,
+            'chain_id': MinterTx.TESTNET_CHAIN_ID,
+            'gas_coin': 'MNT',
+            'threshold': 7,
+            'weights': [1, 3, 5],
+            'addresses': [
+                'Mxee81347211c72524338f9680072af90744333143',
+                'Mxee81347211c72524338f9680072af90744333145',
+                'Mxee81347211c72524338f9680072af90744333144'
+            ]
+        })
+
+    def test_valid_tx(self):
+        """ Is tx instance of needed TX class. """
+        self.assertIsInstance(self.TX, MinterCreateMultisigTx)
+
+        with self.assertRaisesRegex(ValueError, 'threshold'):
+            MinterCreateMultisigTx(
+                nonce=1, gas_coin='mnt', threshold=1.1, weights=[1],
+                addresses=['Mxee81347211c72524338f9680072af90744333143']
+            )
+
+        with self.assertRaisesRegex(ValueError, 'weights'):
+            MinterCreateMultisigTx(
+                nonce=1, gas_coin='mnt', threshold=1, weights=[0, '1', 1024],
+                addresses=['Mxee81347211c72524338f9680072af90744333143']
+            )
+
+    def test_sign_tx(self):
+        """ Sign transaction and check signed transaction """
+        self.TX.sign(self.PRIVATE_KEY)
+        self.assertEqual(self.TX.signed_tx, self.SIGNED_TX)
+
+    def test_from_raw(self):
+        tx = MinterTx.from_raw(raw_tx=self.SIGNED_TX)
+
+        self.assertEqual(tx.from_mx, self.FROM)
+        self.assertEqual(tx.threshold, self.TX.threshold)
+        self.assertEqual(tx.weights, self.TX.weights)
+        self.assertEqual(tx.addresses, self.TX.addresses)
 
 
 if __name__ == '__main__':
