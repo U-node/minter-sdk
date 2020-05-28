@@ -16,7 +16,7 @@ class MinterCheck(object):
     """
 
     def __init__(self, nonce, due_block, coin, value, gas_coin,
-                 passphrase=None, chain_id=1, **kwargs):
+                 passphrase='', chain_id=1, **kwargs):
         """
         Args:
             nonce (int)
@@ -73,10 +73,6 @@ class MinterCheck(object):
         Args:
             private_key (str)
         """
-
-        if not self.passphrase:
-            raise ValueError('Passphrase should be not empty string')
-
         # Prepare structure
         # It contains nonce, chain_id, due_block, coin, value, gas_coin,
         # lock, v, r, s.
@@ -122,7 +118,7 @@ class MinterCheck(object):
         return MinterHelper.prefix_add(check, PREFIX_CHECK)
 
     @classmethod
-    def proof(cls, address, passphrase):
+    def proof(cls, address, passphrase=''):
         """
         Create proof
         Args:
